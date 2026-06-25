@@ -1,5 +1,5 @@
 {
-  "name": "ten7/github-code-tests",
+  "name": "ten7/github-code-testing",
   "description": "TEN7 GitHub Actions and workflows for code testing",
   "type": "composer-plugin",
   "license": "GPL-2.0-or-later",
