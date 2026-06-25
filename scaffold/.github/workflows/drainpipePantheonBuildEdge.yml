@@ -1,0 +1,83 @@
+name: "Pantheon Build edge"
+
+on:
+  push:
+    branches:
+      - edge
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  Drainpipe-Deploy-Pantheon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ddev/.drainpipe-composer-cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      - uses: ./.github/actions/drainpipe/set-env
+
+      - name: Install and Start DDEV
+        uses: ./.github/actions/drainpipe/ddev
+        with:
+          git-name: Drainpipe Bot
+          git-email: no-reply@example.com
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+      - name: Build Project
+        env:
+          directory: /tmp/release
+        run: |
+          ddev composer install
+          ddev task assets:prod
+          ddev task snapshot:directory directory=/tmp/release
+
+      - name: Create edge or Wipe edge Multidev
+        run: |
+          source .github/actions/drainpipe/set-env/bash_aliases
+          drainpipe_exec "terminus auth:login --machine-token=\"${{ secrets.TERMINUS_MACHINE_TOKEN }}\""
+          JQ_COMMAND="'.[] | select(.id == \"edge\") | .id'"
+          ENVIRONMENT_EXISTS=$(drainpipe_exec "terminus multidev:list --format json ${{ secrets.PANTHEON_SITE_NAME }} | jq --raw-output $JQ_COMMAND")
+          if [ "$ENVIRONMENT_EXISTS" == "edge" ]; then
+            drainpipe_exec "terminus env:wipe ${{ secrets.PANTHEON_SITE_NAME }}.edge --yes"
+          else
+            drainpipe_exec "terminus multidev:create ${{ secrets.PANTHEON_SITE_NAME }}.live edge --no-db --no-files --yes"
+          fi
+          if [ "${{ inputs.run-installer }}" != "true" ]; then
+              drainpipe_exec "terminus env:clone-content ${{ secrets.PANTHEON_SITE_NAME }}.live edge --yes"
+          fi
+        shell: bash
+
+      - name: Push to Pantheon
+        uses: ./.github/actions/drainpipe/pantheon/push
+        with:
+          terminus-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          commit-message: ${{ github.sha }}
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          branch: edge
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+
+      - name: Wait for review app to respond
+        uses: ./.github/actions/terminus/wait-for-build
+        with:
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ github.event.deployment_status.environment }}
+
+      - name: Run indexing if it is needed.
+        if: ${{ env.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
+        uses: ./.github/actions/drupal/index-search
+        with:
+          machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          pr-number: edge

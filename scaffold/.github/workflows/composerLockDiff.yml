@@ -1,0 +1,65 @@
+name: "Composer Lock Diff"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'composer.lock'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  Composer-Lock-Diff:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Install composer-lock-diff
+        run: composer global require davidrjonas/composer-lock-diff:^1.0
+
+      - name: Update PR description with composer diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          DIFF=$(~/.composer/vendor/bin/composer-lock-diff \
+            --from origin/${{ github.base_ref }}:composer.lock \
+            --to composer.lock \
+            --md)
+          
+          [ -z "$DIFF" ] && echo "No composer.lock changes detected." && exit 0
+
+          CURRENT_BODY=$(gh pr view $PR_NUMBER --json body --jq '.body // ""')
+
+          NEW_BODY=$(CURRENT_BODY="$CURRENT_BODY" \
+                     DIFF="$DIFF" \
+                     python3 - <<'PYEOF'
+          import os, re
+
+          body  = os.environ['CURRENT_BODY']
+          diff  = os.environ['DIFF']
+          start = '<!-- composer-lock-diff-start -->'
+          end   = '<!-- composer-lock-diff-end -->'
+
+          body = re.sub(re.escape(start) + '.*?' + re.escape(end), '', body, flags=re.DOTALL).strip()
+
+          new_section = f"{start}\n\n## Composer Lock Diff\n\n{diff}\n\n{end}"
+
+          print((body + '\n\n' + new_section) if body else new_section, end='')
+          PYEOF
+          )
+
+          gh pr edit $PR_NUMBER --body "$NEW_BODY"

@@ -1,0 +1,69 @@
+name: 'Add Multidev URL to PR'
+description: 'Adds the Pantheon Multidev URL to the PR description if not already present'
+inputs:
+  github-token:
+    description: 'GitHub token'
+    required: true
+  pr-number:
+    description: 'Pull request number'
+    required: true
+  site-name:
+    description: 'Pantheon site machine name'
+    required: true
+  lock-username:
+    description: 'Basic auth username for the locked environment'
+    required: false
+    default: ''
+  lock-password:
+    description: 'Basic auth password for the locked environment'
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Add Multidev URL to PR description
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        PANTHEON_PROJECT: ${{ inputs.site-name }}
+        SERVER_USERNAME: ${{ inputs.lock-username }}
+        SERVER_PASSWORD: ${{ inputs.lock-password }}
+      run: |
+        BODY=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json body --jq '.body // ""')
+        if echo "$BODY" | grep -q '<!-- pr-url-start -->'; then
+          echo "PR URL section already exists, skipping."
+          exit 0
+        fi
+
+        MULTIDEV_URL="https://pr-${PR_NUMBER}-${PANTHEON_PROJECT}.pantheonsite.io"
+        if [ -n "$SERVER_USERNAME" ] && [ -n "$SERVER_PASSWORD" ]; then
+          MULTIDEV_URL_AUTH="https://${SERVER_USERNAME}:${SERVER_PASSWORD}@pr-${PR_NUMBER}-${PANTHEON_PROJECT}.pantheonsite.io"
+        else
+          MULTIDEV_URL_AUTH="$MULTIDEV_URL"
+        fi
+
+        NEW_BODY=$(CURRENT_BODY="$BODY" \
+                   MULTIDEV_URL="$MULTIDEV_URL" \
+                   MULTIDEV_URL_AUTH="$MULTIDEV_URL_AUTH" \
+                   python3 - <<'PYEOF'
+        import os
+
+        body              = os.environ['CURRENT_BODY']
+        multidev_url      = os.environ['MULTIDEV_URL']
+        multidev_url_auth = os.environ['MULTIDEV_URL_AUTH']
+        start             = '<!-- pr-url-start -->'
+        end               = '<!-- pr-url-end -->'
+
+        new_section = (
+            f"{start}\n\n"
+            f"## Multidev Environment\n\n"
+            f'<a href="{multidev_url_auth}">{multidev_url}</a>\n\n'
+            f"{end}"
+        )
+
+        print((body + '\n\n' + new_section) if body else new_section, end='')
+        PYEOF
+        )
+
+        gh pr edit "$PR_NUMBER" --repo ${{ github.repository }} --body "$NEW_BODY"
+      shell: bash

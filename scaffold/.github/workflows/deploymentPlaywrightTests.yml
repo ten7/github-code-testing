@@ -1,0 +1,37 @@
+name: "Run playwright tests on Pantheon"
+
+on:
+  deployment_status: {}
+
+jobs:
+  Playwright-Tests:
+    runs-on: ubuntu-latest
+    if: github.event.deployment_status.state == 'success'
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          terminus-version: 4.3.1
+      - name: Wait for review app to respond
+        uses: ./.github/actions/terminus/wait-for-build
+        with:
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ github.event.deployment_status.environment }}
+
+      # Playwright steps go here
+      - name: Checkout actions
+        uses: actions/checkout@v4
+
+      - name: Run Playwright tests
+        uses: ./.github/actions/playwright/test
+        with:
+          target-url: ${{ github.event.deployment_status.environment_url }}
+          environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          environment-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          test-args: "--ignore-snapshots --project=func-chromium --grep='@sandbox'"

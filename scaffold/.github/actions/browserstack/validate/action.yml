@@ -1,0 +1,81 @@
+name: 'Validate BrowserStack Credentials'
+description: 'Validates that BrowserStack credentials are set and optionally verifies them via API'
+
+inputs:
+  enabled:
+    description: 'Whether BrowserStack tests are enabled (use vars.BROWSERSTACK_TESTS_ENABLED or PR label check)'
+    required: false
+    default: 'true'
+  username:
+    description: 'BrowserStack username'
+    required: true
+  access-key:
+    description: 'BrowserStack access key'
+    required: true
+  validate-api:
+    description: 'Whether to validate credentials via BrowserStack API call'
+    required: false
+    default: 'true'
+
+outputs:
+  available:
+    description: 'Whether BrowserStack credentials are available and valid'
+    value: ${{ steps.validate.outputs.available }}
+  plan-name:
+    description: 'BrowserStack plan name (if API validation enabled)'
+    value: ${{ steps.validate.outputs.plan_name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate BrowserStack credentials
+      id: validate
+      shell: bash
+      env:
+        BROWSERSTACK_ENABLED: ${{ inputs.enabled }}
+        BROWSERSTACK_USERNAME: ${{ inputs.username }}
+        BROWSERSTACK_ACCESS_KEY: ${{ inputs.access-key }}
+        VALIDATE_API: ${{ inputs.validate-api }}
+      run: |
+        # Check if BrowserStack tests are enabled
+        if [ "$BROWSERSTACK_ENABLED" != "true" ]; then
+          echo "::notice::BrowserStack tests are disabled"
+          echo "available=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Check if credentials are set
+        if [ -z "$BROWSERSTACK_USERNAME" ] || [ -z "$BROWSERSTACK_ACCESS_KEY" ]; then
+          echo "::warning::BrowserStack credentials are not set"
+          echo "available=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Optionally validate credentials via API
+        if [ "$VALIDATE_API" == "true" ]; then
+          echo "Validating BrowserStack credentials via API..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+            https://api.browserstack.com/automate/plan.json)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" == "200" ]; then
+            PLAN_NAME=$(echo "$BODY" | jq -r '.automate_plan // "unknown"')
+            echo "::notice::BrowserStack credentials validated successfully (Plan: $PLAN_NAME)"
+            echo "available=true" >> $GITHUB_OUTPUT
+            echo "plan_name=$PLAN_NAME" >> $GITHUB_OUTPUT
+          elif [ "$HTTP_CODE" == "401" ]; then
+            echo "::error::BrowserStack credentials are invalid (401 Unauthorized)"
+            echo "available=false" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::BrowserStack API returned unexpected status code: $HTTP_CODE"
+            echo "::warning::Response: $BODY"
+            # Treat as unavailable if we can't verify
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "::notice::BrowserStack credentials are set (API validation skipped)"
+          echo "available=true" >> $GITHUB_OUTPUT
+        fi
+

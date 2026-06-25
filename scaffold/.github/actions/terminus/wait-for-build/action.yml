@@ -1,0 +1,53 @@
+name: "Determine if build is complete"
+description: "Action to determine if a given pantheon build is completed"
+inputs:
+  site-name:
+    description: "The the site-name for testing"
+    required: true
+  multidev-name:
+    description: "The multidev name for testing"
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Wait for Pantheon Sync
+      shell: bash
+      env:
+        SITE_NAME: ${{ inputs.site-name }}
+        MULTIDEV: ${{ inputs.multidev-name }}
+      run: |
+        echo "Waiting for Pantheon to sync code on $MULTIDEV..."
+        
+        TARGET_WORKFLOW="Sync code on \"$MULTIDEV\""
+        MAX_ATTEMPTS=30
+        ATTEMPT=0
+        
+        while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+          ATTEMPT=$((ATTEMPT + 1))
+          echo "Attempt $ATTEMPT of $MAX_ATTEMPTS..."
+        
+          STATUS=$(terminus workflow:list "$SITE_NAME" \
+            --format=json --fields=id,env,status,workflow \
+            | jq -r --arg env "$MULTIDEV" --arg wf "$TARGET_WORKFLOW" \
+              '[to_entries[]
+                | select(.value.env == $env)
+                | select(.value.workflow == $wf)
+              ] | first | .value.status')
+        
+          echo "  Status: $STATUS"
+        
+          if [[ "$STATUS" == "succeeded" ]]; then
+            echo "✅ Pantheon sync complete!"
+            exit 0
+          fi
+        
+          if [[ "$STATUS" == "failed" ]]; then
+            echo "❌ Pantheon sync failed!"
+            exit 1
+          fi
+        
+          sleep 20
+        done
+        
+        echo "⏰ Timed out waiting for Pantheon sync."
+        exit 1

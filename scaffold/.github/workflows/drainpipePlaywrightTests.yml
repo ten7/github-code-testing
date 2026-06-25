@@ -1,0 +1,44 @@
+name: "Playwright Tests on Pantheon"
+
+on:
+  workflow_run:
+    workflows:
+      - "Pantheon Build edge"
+      - "Pantheon Review Apps"
+    types:
+      - completed
+
+jobs:
+  Playwright-Tests:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 30
+    steps:
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          terminus-version: 4.3.1
+      - name: Wait for review app to respond
+        uses: ./.github/actions/terminus/wait-for-build
+        with:
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ github.event.deployment_status.environment }}
+
+      - name: Set target URL
+        id: set-url
+        run: |
+          SITE_NAME="${{ vars.PANTHEON_SITE_NAME || secrets.PANTHEON_SITE_NAME }}"
+          if [ "${{ github.event.workflow_run.name }}" == "Pantheon Build edge" ]; then
+            echo "url=https://edge-${SITE_NAME}.pantheonsite.io" >> $GITHUB_OUTPUT
+          else
+            PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+            echo "url=https://pr-${PR_NUMBER}-${SITE_NAME}.pantheonsite.io" >> $GITHUB_OUTPUT
+          fi
+      - name: Run Playwright tests
+        uses: ./.github/actions/playwright/test
+        with:
+          target-url: ${{ steps.set-url.outputs.url }}
+          environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          environment-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          test-args: '--project=func-chromium --project=wcag'

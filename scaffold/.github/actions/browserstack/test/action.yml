@@ -1,0 +1,77 @@
+name: "BrowserStack Tests on Pantheon"
+description: "Run BrowserStack tests against Pantheon-hosted sites on pull request and main branch builds."
+inputs:
+  enabled:
+    description: "Whether to run BrowserStack tests. Set to 'true' to enable, or 'false' to disable. Can also be set as an environment variable or secret named BROWSERSTACK_TESTS_ENABLED."
+    required: false
+    default: "false"
+  browserstack-username:
+    description: "BrowserStack username. Should be set as a secret named BROWSERSTACK_USERNAME."
+    required: true
+  browserstack-access-key:
+    description: "BrowserStack access key. Should be set as a secret named BROWSERSTACK_ACCESS_KEY."
+    required: true
+  pantheon-site-name:
+    description: "The name of the Pantheon site to test against."
+    required: true
+  pantheon-review-username:
+    description: "Username for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_USERNAME."
+    required: true
+  pantheon-review-password:
+    description: "Password for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_PASSWORD."
+    required: true
+  playwright-args:
+    description: "Additional arguments to pass to the Playwright test command. For instance --ignore-snapshots --project=func-chromium"
+    required: false
+    default: "--ignore-snapshots --project=func-chromium --project=wcag --project=vrt-chromium"
+runs:
+  using: composite
+  steps:
+    - name: Set target URL
+      shell: bash
+      id: set-url
+      env:
+        PANTHEON_SITE_NAME: ${{ inputs.pantheon-site-name }}
+        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
+        BASIC_AUTH_PASS: ${{ inputs.pantheon-review-password }}
+      run: |
+        if [[ "${{ github.event.workflow_run.name }}" == "Pantheon Build main" ]]; then
+        echo "target_url=https://dev-${{ PANTHEON_SITE_NAME }}.pantheonsite.io" >> $GITHUB_OUTPUT
+        else
+        echo "target_url=https://pr-${{ github.event.workflow_run.pull_requests[0].number }}-${{ PANTHEON_SITE_NAME }}.pantheonsite.io" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Checkout actions
+      uses: actions/checkout@v6
+
+    - name: Verify site name is set
+      shell: bash
+      run: |
+        if [ -z "$PANTHEON_SITE_NAME" ]; then
+          echo "::error::PANTHEON_SITE_NAME is empty. Set it under Settings → Secrets and variables → Actions (either tab)."
+          exit 1
+        fi
+        echo "Using PANTHEON_SITE_NAME=$PANTHEON_SITE_NAME"
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+        cache-dependency-path: 'test/playwright/package-lock.json'
+
+    - name: Install dependencies
+      shell: bash
+      run: cd test/playwright && npm ci
+
+    - name: Run BrowserStack tests
+      shell: bash
+      run:
+        cd test/playwright && mkdir -p test-results && npm run test:browserstack -- --ignore-snapshots ${{ inputs.playwright-args }}
+      env:
+        NODE_OPTIONS: --disable-warning=DEP0205
+        BASE_URL: ${{ steps.set-url.outputs.target_url }}
+        PROD_URL: https://test-${{ inputs.pantheon-site-name}}.pantheonsite.io
+        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
+        BASIC_AUTH_PASS: ${{ inputs.patheon-review-password }}
+        BROWSERSTACK_USERNAME: ${{ inputs.browserstack-user-name}}
+        BROWSERSTACK_ACCESS_KEY: ${{ inputs.browserstack-access-key }}

@@ -1,0 +1,48 @@
+name: "Run Browserstack tests on Pantheon"
+
+on:
+  deployment_status: { }
+
+jobs:
+  Set-Up-Tests:
+    runs-on: ubuntu-latest
+    if: github.event.deployment_status.state == 'success'
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          terminus-version: 4.3.1
+      - name: Wait for review app to respond
+        uses: ./.github/actions/terminus/wait-for-build
+        with:
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ github.event.deployment_status.environment }}
+
+      # Browserstack test steps go here
+      - name: Checkout actions
+        uses: actions/checkout@v6
+
+      - name: Validate browserstack connection
+        uses: ./.github/actions/browserstack/validate
+        with:
+          enabled: ${{ vars.BROWSERSTACK_TESTS_ENABLED }}
+          username: ${{ secrets.BROWSERSTACK_USERNAME }}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          validate-api: 'true'
+
+      - name: Run tests
+        if: ${{ steps.validate-browserstack.outputs.available == 'true' }}
+        uses: ./.github/actions/browserstack/test
+        with:
+          browserstack-access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          browserstack-username: ${{ secrets.BROWSERSTACK_USERNAME }}
+          pantheon-review-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          pantheon-review-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          pantheon-site-name: ${{ vars.PANTHEON_SITE_NAME }}
+          playwright-args: '--ignore-snapshots --grep="@browserstack"'
