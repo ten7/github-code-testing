@@ -1,75 +1,98 @@
-<img alt="Drupal Logo" src="https://www.drupal.org/files/Wordmark_blue_RGB.png" height="60px">
+# ten7/github-code-testing
 
-Drupal is an open source content management platform supporting a variety of
-websites ranging from personal weblogs to large community-driven websites. For
-more information, visit the Drupal website, [Drupal.org][Drupal.org], and join
-the [Drupal community][Drupal community].
+A Composer plugin that scaffolds TEN7's GitHub Actions and workflow files into Drupal projects. Requires [lullabot/drainpipe](https://github.com/lullabot/drainpipe) as a dependency — even on projects not using drainpipe workflows, as it provides the build tooling the actions depend on.
 
-## Contributing
+## Installation
 
-Drupal is developed on [Drupal.org][Drupal.org], the home of the international
-Drupal community since 2001!
+```bash
+composer require ten7/github-code-testing
+```
 
-[Drupal.org][Drupal.org] hosts Drupal's [GitLab repository][GitLab repository],
-its [issue queue][issue queue], and its [documentation][documentation]. Before
-you start working on code, be sure to search the [issue queue][issue queue] and
-create an issue if your aren't able to find an existing issue.
+## Configuration
 
-Every issue on Drupal.org automatically creates a new community-accessible fork
-that you can contribute to. Learn more about the code contribution process on
-the [Issue forks & merge requests page][issue forks].
+Add a `code_testing` key to the `extra` section of your project's `composer.json`. Under `github`, declare which workflows to scaffold using a context key and a list of workflow names.
 
-## Usage
+```json
+"extra": {
+    "code_testing": {
+        "github": {
+            "drainpipe": ["PlaywrightTests", "BrowserStackTests", "GithubCodeTests"]
+        }
+    },
+    "drainpipe": {
+        "github": {
+            "pantheon": ["ReviewApps"]
+        }
+    }
+}
+```
 
-For a brief introduction, see [USAGE.txt](/core/USAGE.txt). You can also find
-guides, API references, and more by visiting Drupal's [documentation
-page][documentation].
+Each entry maps to a workflow file using the pattern `{context}{Name}.yml`. The example above would scaffold:
 
-You can quickly extend Drupal's core feature set by installing any of its
-[thousands of free and open source modules][modules]. With Drupal and its
-module ecosystem, you can often build most or all of what your project needs
-before writing a single line of code.
+- `drainpipePlaywrightTests.yml`
+- `drainpipeBrowserStackTests.yml`
+- `drainpipeGithubCodeTests.yml`
+- `pantheonReviewApps.yml`
 
-## Changelog
+## Workflow contexts
 
-Drupal keeps detailed [change records][changelog]. You can search Drupal's
-changes for a record of every notable breaking change and new feature since
-2011.
+| Context | Use when |
+|---|---|
+| `drainpipe` | The project uses drainpipe for its build and deploy pipeline |
+| `deployment` | The project uses a non-drainpipe deployment pipeline |
+| `pantheon` | The project is hosted on Pantheon |
+| `composer` | Composer-related workflows (e.g., lock file diffs) |
+| `test` | Standalone test utilities (e.g., Renovate) |
 
-## Security
+## Available workflows
 
-For a list of security announcements, see the [Security advisories
-page][Security advisories] (available as [an RSS feed][security RSS]). This
-page also describes how to subscribe to these announcements via email.
+| File | Context | Name |
+|---|---|---|
+| `drainpipePlaywrightTests.yml` | `drainpipe` | `PlaywrightTests` |
+| `drainpipeBrowserStackTests.yml` | `drainpipe` | `BrowserStackTests` |
+| `drainpipeGithubCodeTests.yml` | `drainpipe` | `GithubCodeTests` |
+| `drainpipePantheonBuildMain.yml` | `drainpipe` | `PantheonBuildMain` |
+| `drainpipePantheonBuildEdge.yml` | `drainpipe` | `PantheonBuildEdge` |
+| `deploymentPlaywrightTests.yml` | `deployment` | `PlaywrightTests` |
+| `deploymentBrowserStackTests.yml` | `deployment` | `BrowserStackTests` |
+| `pantheonReviewApps.yml` | `pantheon` | `ReviewApps` |
+| `composerLockDiff.yml` | `composer` | `LockDiff` |
+| `testRenovate.yml` | `test` | `Renovate` |
 
-For information about the Drupal security process, or to find out how to report
-a potential security issue to the Drupal security team, see the [Security team
-page][security team].
+## Actions
 
-## Need a helping hand?
+All actions under `.github/actions/` are scaffolded unconditionally. They have no effect unless referenced by a workflow.
 
-Visit the [Support page][support] or browse [over a thousand Drupal
-providers][service providers] offering design, strategy, development, and
-hosting services.
+| Action | Purpose |
+|---|---|
+| `actions/browserstack/test` | Run BrowserStack tests |
+| `actions/browserstack/validate` | Validate BrowserStack configuration |
+| `actions/drupal/index-search` | Trigger search index rebuild via Terminus |
+| `actions/github/add-pr-url` | Add the multidev URL to a pull request body |
+| `actions/playwright/test` | Run Playwright tests |
+| `actions/terminus/wait-for-build` | Poll until a Pantheon multidev environment is ready |
 
-## Legal matters
+## Relationship to drainpipe
 
-Know your rights when using Drupal by reading Drupal core's
-[license](/core/LICENSE.txt).
+This package and drainpipe are configured independently. If a project uses both, declare each in its own `extra` block:
 
-Learn about the [Drupal trademark and logo policy here][trademark].
+```json
+"extra": {
+    "drainpipe": {
+        "github": {
+            "pantheon": ["ReviewApps"]
+        }
+    },
+    "code_testing": {
+        "github": {
+            "drainpipe": ["PlaywrightTests"]
+        }
+    }
+}
+```
 
-[Drupal.org]: https://www.drupal.org
-[Drupal community]: https://www.drupal.org/community
-[GitLab repository]: https://git.drupalcode.org/project/drupal
-[issue queue]: https://www.drupal.org/project/issues/drupal
-[issue forks]: https://www.drupal.org/drupalorg/docs/gitlab-integration/issue-forks-merge-requests
-[documentation]: https://www.drupal.org/documentation
-[changelog]: https://www.drupal.org/list-changes/drupal
-[modules]: https://www.drupal.org/project/project_module
-[security advisories]: https://www.drupal.org/security
-[security RSS]: https://www.drupal.org/security/rss.xml
-[security team]: https://www.drupal.org/drupal-security-team
-[service providers]: https://www.drupal.org/drupal-services
-[support]: https://www.drupal.org/support
-[trademark]: https://www.drupal.com/trademark
+Drainpipe scaffolds its own files first; this plugin runs afterward and overwrites only the files it manages.
+
+## Why workflows are opt-in
+
+Workflows not declared in `code_testing` are never written to `.github/workflows/`, so they never appear in the GitHub Actions tab. This keeps Pantheon-specific or drainpipe-specific workflows out of projects that don't use them.

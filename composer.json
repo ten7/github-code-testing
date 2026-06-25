@@ -19,8 +19,5 @@
   },
   "extra": {
     "class": "TEN7\\CodeTests\\Plugin"
-  },
-  "autoload-dev": {
-    "files": ["vendor/lullabot/drainpipe/scaffold/env/dotenv.php"]
   }
 }
