@@ -11,8 +11,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-php-version:
+    name: Detect PHP Version
+    runs-on: ubuntu-latest
+    outputs:
+      php-version: ${{ steps.php-version.outputs.php-version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Read php_version from Pantheon config
+        id: php-version
+        uses: ./.github/actions/code-testing/detect-php-version
   Composer-Lock-Diff:
     runs-on: ubuntu-24.04
+    needs: detect-php-version
     permissions:
       contents: read
       pull-requests: write
@@ -24,7 +36,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ needs.detect-php-version.outputs.php-version }}
 
       - name: Install composer-lock-diff
         run: composer global require davidrjonas/composer-lock-diff:^1.0

@@ -1,0 +1,30 @@
+name: 'Detect PHP Version'
+description: 'Reads php_version from pantheon.yml or pantheon.upstream.yml, with a configurable fallback'
+inputs:
+  fallback-version:
+    description: 'PHP version to use if no Pantheon config file is found'
+    required: false
+    default: '8.3'
+outputs:
+  php-version:
+    description: 'The detected PHP version'
+    value: ${{ steps.php-version.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - name: Read php_version from Pantheon config
+      id: php-version
+      run: |
+        PHP_VERSION=""
+        for FILE in pantheon.yml pantheon.upstream.yml; do
+          if [ -f "$FILE" ]; then
+            PHP_VERSION=$(grep -m1 'php_version:' "$FILE" | awk '{print $2}')
+            if [ -n "$PHP_VERSION" ]; then
+              echo "Found PHP ${PHP_VERSION} in ${FILE}"
+              break
+            fi
+          fi
+        done
+        PHP_VERSION="${PHP_VERSION:-${{ inputs.fallback-version }}}"
+        echo "version=${PHP_VERSION}" >> $GITHUB_OUTPUT
+      shell: bash
