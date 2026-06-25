@@ -154,7 +154,7 @@ jobs:
           echo "DDEV URL: ${DDEV_URL}"
 
       - name: Run Playwright tests in DDEV
-        uses: ./.github/actions/playwright/test
+        uses: ./.github/actions/code-testing/playwright/test
         with:
           environment-password: ''
           environment-username: ''

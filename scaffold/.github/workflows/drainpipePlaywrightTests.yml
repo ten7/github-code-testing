@@ -20,7 +20,7 @@ jobs:
           pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           terminus-version: 4.3.1
       - name: Wait for review app to respond
-        uses: ./.github/actions/terminus/wait-for-build
+        uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           multidev-name: ${{ github.event.deployment_status.environment }}
@@ -36,7 +36,7 @@ jobs:
             echo "url=https://pr-${PR_NUMBER}-${SITE_NAME}.pantheonsite.io" >> $GITHUB_OUTPUT
           fi
       - name: Run Playwright tests
-        uses: ./.github/actions/playwright/test
+        uses: ./.github/actions/code-testing/playwright/test
         with:
           target-url: ${{ steps.set-url.outputs.url }}
           environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}

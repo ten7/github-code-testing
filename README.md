@@ -5,7 +5,7 @@ A Composer plugin that scaffolds TEN7's GitHub Actions and workflow files into D
 ## Installation
 
 ```bash
-composer require ten7/github-code-testing
+composer require ten7/code-testing
 ```
 
 ## Configuration
@@ -21,7 +21,7 @@ Add a `code_testing` key to the `extra` section of your project's `composer.json
     },
     "drainpipe": {
         "github": {
-            "pantheon": ["ReviewApps"]
+            "pantheon": ["Actions"]
         }
     }
 }
@@ -80,7 +80,7 @@ This package and drainpipe are configured independently. If a project uses both,
 "extra": {
     "drainpipe": {
         "github": {
-            "pantheon": ["ReviewApps"]
+            "pantheon": ["Actions"]
         }
     },
     "code_testing": {

@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.deployment_status.state == 'success'
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -19,7 +21,7 @@ jobs:
           pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           terminus-version: 4.3.1
       - name: Wait for review app to respond
-        uses: ./.github/actions/terminus/wait-for-build
+        uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           multidev-name: ${{ github.event.deployment_status.environment }}
@@ -29,7 +31,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Playwright tests
-        uses: ./.github/actions/playwright/test
+        uses: ./.github/actions/code-testing/playwright/test
         with:
           target-url: ${{ github.event.deployment_status.environment_url }}
           environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}

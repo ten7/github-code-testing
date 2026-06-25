@@ -73,29 +73,21 @@ jobs:
           echo "Configuring ${SITE_NAME}.${MULTIDEV_ENV} for testing..."
 
       - name: Wait for review app to respond
-        env:
-          URL: https://pr-${{ github.event.pull_request.number }}-${{ vars.PANTHEON_SITE_NAME }}.pantheonsite.io
-          AUTH: ${{ secrets.PANTHEON_REVIEW_USERNAME }}:${{ secrets.PANTHEON_REVIEW_PASSWORD }}
-        run: |
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -u "$AUTH" --max-time 10 "$URL/" || echo "000")
-            echo "attempt $i: $code"
-            if [ "$code" = "200" ]; then exit 0; fi
-            sleep 10
-          done
-          echo "review app never returned 200"
-          exit 1
+        uses: ./.github/actions/code-testing/terminus/wait-for-build
+        with:
+          multidev-name: pr-${{ github.event.pull_request.number }}
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
 
       - name: Run indexing if it is needed.
         if: ${{ env.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
-        uses: ./.github/actions/drupal/index-search
+        uses: .github/actions/code-testing/drupal/index-search
         with:
           machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           pr-number: pr-${{ github.event.pull_request.number }}
 
       - name: Add Multidev URL to PR
-        uses: ./.github/actions/github/add-pr-url
+        uses: ./.github/actions/code-testing/github/add-pr-url
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pr-number: ${{ github.event.pull_request.number }}

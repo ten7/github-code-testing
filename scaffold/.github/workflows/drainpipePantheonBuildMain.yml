@@ -64,14 +64,14 @@ jobs:
           pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
 
       - name: Wait for review app to respond
-        uses: ./.github/actions/terminus/wait-for-build
+        uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           multidev-name: ${{ github.event.deployment_status.environment }}
 
       - name: Run indexing if it is needed.
         if: ${{ env.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
-        uses: ./.github/actions/drupal/index-search
+        uses: ./.github/actions/code-testing/drupal/index-search
         with:
           machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}

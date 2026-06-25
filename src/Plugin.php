@@ -38,7 +38,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $config = $extra['code_testing']['github'] ?? [];
 
         if (empty($config)) {
-            $this->io->write('<info>ten7/github-code-testing: no code_testing config found, skipping scaffold.</info>');
+            $this->io->write('<info>ten7/code-testing: no code_testing config found, skipping scaffold.</info>');
             return;
         }
 
@@ -61,7 +61,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 $target   = $targetDir . '/workflows/' . $filename;
 
                 if (!file_exists($source)) {
-                    $this->io->writeError("<warning>ten7/github-code-testing: scaffold file not found: $filename</warning>");
+                    $this->io->writeError("<warning>ten7/code-testing: scaffold file not found: $filename</warning>");
                     continue;
                 }
 
@@ -70,7 +70,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 }
 
                 copy($source, $target);
-                $this->io->write("<info>ten7/github-code-testing: scaffolded $filename</info>");
+                $this->io->write("<info>ten7/code-testing: scaffolded $filename</info>");
             }
         }
     }
@@ -98,7 +98,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 }
             } else {
                 copy($item->getPathname(), $targetPath);
-                $this->io->write('<info>ten7/github-code-testing: scaffolded action ' . $iterator->getSubPathname() . '</info>');
+                $this->io->write('<info>ten7/code-testing: scaffolded action ' . $iterator->getSubPathname() . '</info>');
             }
         }
     }

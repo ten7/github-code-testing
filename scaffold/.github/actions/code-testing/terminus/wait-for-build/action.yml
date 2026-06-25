@@ -46,7 +46,7 @@ runs:
             exit 1
           fi
         
-          sleep 20
+          sleep 50
         done
         
         echo "⏰ Timed out waiting for Pantheon sync."
