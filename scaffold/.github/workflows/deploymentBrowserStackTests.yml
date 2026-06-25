@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Validate browserstack connection
-        uses: ./.github/actions/code-testing/browserstackvalidate
+        uses: ./.github/actions/code-testing/browserstack/validate
         with:
           enabled: ${{ vars.BROWSERSTACK_TESTS_ENABLED }}
           username: ${{ secrets.BROWSERSTACK_USERNAME }}
@@ -40,7 +40,7 @@ jobs:
 
       - name: Run tests
         if: ${{ steps.validate-browserstack.outputs.available == 'true' }}
-        uses: ./.github/actions/code-testing/browserstacktest
+        uses: ./.github/actions/code-testing/browserstack/test
         with:
           browserstack-access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
           browserstack-username: ${{ secrets.BROWSERSTACK_USERNAME }}
