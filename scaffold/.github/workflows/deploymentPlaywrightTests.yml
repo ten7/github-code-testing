@@ -23,8 +23,8 @@ jobs:
       - name: Wait for review app to respond
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
-          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          multidev-name: pr-${{ github.event.deployment_status.environment }}
+          site-name: ${{ vars.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ github.event.deployment_status.environment }}
 
       # Playwright steps go here
       - name: Checkout actions
