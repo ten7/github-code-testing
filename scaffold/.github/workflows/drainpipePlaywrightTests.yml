@@ -23,7 +23,7 @@ jobs:
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          multidev-name: ${{ github.event.deployment_status.environment }}
+          multidev-name: pr-${{ github.event.deployment_status.environment }}
 
       - name: Set target URL
         id: set-url

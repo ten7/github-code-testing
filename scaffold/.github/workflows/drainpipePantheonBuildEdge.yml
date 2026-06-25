@@ -72,7 +72,7 @@ jobs:
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          multidev-name: ${{ github.event.deployment_status.environment }}
+          multidev-name: edge
 
       - name: Run indexing if it is needed.
         if: ${{ env.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
