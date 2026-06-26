@@ -2,11 +2,26 @@
 
 A Composer plugin that scaffolds TEN7's GitHub Actions and workflow files into
 Drupal projects.
+
 Requires [lullabot/drainpipe](https://github.com/lullabot/drainpipe) as a
-dependency — even on projects not using drainpipe workflows, as it provides the
-build tooling the actions depend on.
+dependency — even on projects not using drainpipe workflows. Drainpipe 
+actions are automatically installed when needed.
 
 ## Installation
+
+Until or if this is added to packagist, you will need to add the repo to your
+"repositories" section in your composer.json.
+
+```json
+{
+  "repositories" [
+    {
+      "type": "vcs",
+      "url": "https://github.com/ten7/github-code-testing"
+    }
+  ]
+}
+```
 
 ```bash
 composer require ten7/code-testing
@@ -16,20 +31,13 @@ composer require ten7/code-testing
 
 Add a `code_testing` key to the `extra` section of your project's
 `composer.json`. Under `github`, declare which workflows to scaffold using a
-context key and a list of workflow names. 
+context key and a list of workflow names.
 
 ⚠️ Note that drainpipe is required for any code_testing drainpipe functions.
 
 ```json
 {
   "extra": {
-    "drainpipe": {
-      "github": {
-        "pantheon": [
-          "Actions"
-        ]
-      }
-    },
     "code_testing": {
       "github": {
         "drainpipe": [
@@ -59,7 +67,7 @@ example above would scaffold:
 - `githubCodeTests.yml`
 - `pantheonReviewApps.yml`
 
-It's entirely possible to skip the extras:code_testing" section and just copy 
+It's entirely possible to skip the extras:code_testing" section and just copy
 the desired files from ./vendor/ten7/scaffold/.github/workflows
 
 ## Workflow contexts
@@ -103,7 +111,7 @@ no effect unless referenced by a workflow.
 
 ## Using deployment-based GitHub actions
 
-If your site uses a deployment (such as the Pantheon deployment system), the 
+If your site uses a deployment (such as the Pantheon deployment system), the
 requirements are different. None of them require drainpipe.
 
 ```json
