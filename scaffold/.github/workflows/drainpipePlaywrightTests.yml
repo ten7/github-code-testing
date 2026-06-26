@@ -43,4 +43,4 @@ jobs:
           target-url: ${{ steps.set-url.outputs.url }}
           environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           environment-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
-          test-args: '--project=func-chromium --project=wcag'
+          test-script: 'ci-ddev'

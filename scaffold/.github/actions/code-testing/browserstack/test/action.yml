@@ -20,10 +20,6 @@ inputs:
   pantheon-review-password:
     description: "Password for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_PASSWORD."
     required: true
-  playwright-args:
-    description: "Additional arguments to pass to the Playwright test command. For instance --ignore-snapshots --project=func-chromium"
-    required: false
-    default: "--ignore-snapshots --project=func-chromium --project=wcag --project=vrt-chromium"
 runs:
   using: composite
   steps:
@@ -66,7 +62,7 @@ runs:
     - name: Run BrowserStack tests
       shell: bash
       run:
-        cd test/playwright && mkdir -p test-results && npm run test:browserstack -- --ignore-snapshots ${{ inputs.playwright-args }}
+        cd test/playwright && mkdir -p test-results && npm run test:browserstack -- --ignore-snapshots
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
         BASE_URL: ${{ steps.set-url.outputs.target_url }}

@@ -52,4 +52,3 @@ jobs:
           pantheon-review-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
           pantheon-review-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           pantheon-site-name: ${{ vars.PANTHEON_SITE_NAME }}
-          playwright-args: '--ignore-snapshots --grep="@browserstack"'

@@ -136,3 +136,24 @@ Workflows not declared in `code_testing` are never written to
 `.github/workflows/`, so they never appear in the GitHub Actions tab. This keeps
 Pantheon-specific or drainpipe-specific workflows out of projects that don't use
 them.
+
+## How to use with Playwright and BrowserStack testing. 
+
+This project expects tests to be in a directory `./test/playwright`. In the 
+package.json file you will need to create scripts that you want to run as follows:
+* test:ci-ddev
+* test:ci-pantheon
+* test:browserstack
+
+These tests should define what should be run by npm. An example might be:
+
+```json
+{
+  "test:ci-ddev": "playwright test --project=func-chromium",
+  "test:ci-pantheon": "playwright test --grep='@smoke' --project=func-chromium"
+}
+
+```
+
+The test:browserstack should be configured differently based on the rules for
+developing with BrowserStack that are beyond the scope of this repo. 

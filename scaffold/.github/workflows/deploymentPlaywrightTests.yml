@@ -36,4 +36,4 @@ jobs:
           target-url: ${{ github.event.deployment_status.environment_url }}
           environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           environment-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
-          test-args: "--ignore-snapshots --project=func-chromium --grep='@sandbox'"
+          test-script: 'ci-pantheon'
