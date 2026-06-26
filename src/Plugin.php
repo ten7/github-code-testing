@@ -27,9 +27,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
   public function uninstall(Composer $composer, IOInterface $io): void {}
 
   public static function getSubscribedEvents(): array {
+    // Use a low priority so we run after other plugins (e.g. lullabot/drainpipe),
+    // which may remove .github/actions/drainpipe before we copy it back.
     return [
-      ScriptEvents::POST_INSTALL_CMD => 'scaffold',
-      ScriptEvents::POST_UPDATE_CMD => 'scaffold',
+      ScriptEvents::POST_INSTALL_CMD => ['scaffold', -100],
+      ScriptEvents::POST_UPDATE_CMD => ['scaffold', -100],
     ];
   }
 
