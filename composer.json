@@ -9,9 +9,8 @@
     "lullabot/drainpipe": "^6.0"
   },
   "require-dev": {
-    "composer/composer": "^2.0",
-    "lullabot/drainpipe-dev": "^6.0"
-  },
+    "composer/composer": "^2.0"
+    },
   "autoload": {
     "psr-4": {
       "TEN7\\CodeTests\\": "src/"
