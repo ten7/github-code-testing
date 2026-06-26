@@ -82,14 +82,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     // Drainpipe workflows rely on actions from lullabot/drainpipe. Copy them
     // automatically so the user doesn't have to do it manually.
     if ($hasDrainpipe) {
-      $actionsDir = dirname($this->composer->getConfig()->get('vendor-dir')) . '/vendor/lullabot/drainpipe/scaffold/github/actions';
+      $actionsSrc = dirname($this->composer->getConfig()->get('vendor-dir')) . '/vendor/lullabot/drainpipe/scaffold/github/actions';
       $actions = [
-        $actionsDir . '/common' => '/actions/drainpipe',
-        $actionsDir . '/pantheon' => '/actions/drainpipe/pantheon',
+        $actionsSrc . '/common' => $targetDir . '/actions/drainpipe',
+        $actionsSrc . '/pantheon' => $targetDir . '/actions/drainpipe/pantheon',
       ];
       foreach ($actions as $actionSrc => $actionDir) {
         if (is_dir($actionSrc)) {
-          $this->copyDirectory($actionSrc, $targetDir);
+          $this->copyDirectory($actionSrc, $actionDir);
           $this->io->write('<info>ten7/code-testing: scaffolded drainpipe actions</info>');
         }
         else {
