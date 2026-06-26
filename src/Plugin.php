@@ -55,7 +55,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     //   "drainpipe": ["PlaywrightTests"] → drainpipePlaywrightTests.yml
     //   "deployment": ["PlaywrightTests"] → deploymentPlaywrightTests.yml
     //   "pantheon":   ["ReviewApps"]      → pantheonReviewApps.yml
+    $hasDrainpipe = FALSE;
     foreach ($config as $context => $items) {
+      if ($context === 'drainpipe') {
+        $hasDrainpipe = TRUE;
+      }
       foreach ($items as $item) {
         $filename = $context . $item . '.yml';
         $source = $scaffoldDir . '/workflows/' . $filename;
@@ -72,6 +76,20 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
 
         copy($source, $target);
         $this->io->write("<info>ten7/code-testing: scaffolded $filename</info>");
+      }
+    }
+
+    // Drainpipe workflows rely on actions from lullabot/drainpipe. Copy them
+    // automatically so the user doesn't have to do it manually.
+    if ($hasDrainpipe) {
+      $drainpipeActions = dirname($this->composer->getConfig()->get('vendor-dir'))
+        . '/vendor/lullabot/drainpipe/scaffold/github/actions/common';
+      if (is_dir($drainpipeActions)) {
+        $this->copyDirectory($drainpipeActions, $targetDir . '/actions/drainpipe');
+        $this->io->write('<info>ten7/code-testing: scaffolded drainpipe actions</info>');
+      }
+      else {
+        $this->io->writeError('<warning>ten7/code-testing: drainpipe workflows configured but lullabot/drainpipe not found in vendor — run composer require lullabot/drainpipe</warning>');
       }
     }
   }
