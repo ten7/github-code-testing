@@ -72,6 +72,11 @@ jobs:
           MULTIDEV_ENV="pr-${PR_NUMBER}"
           echo "Configuring ${SITE_NAME}.${MULTIDEV_ENV} for testing..."
 
+      - name: Make terminus available
+        uses: ./.github/actions/drainpipe/pantheon/setup-terminus
+        with:
+          terminus-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+
       - name: Wait for review app to respond
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
@@ -80,7 +85,7 @@ jobs:
 
       - name: Run indexing if it is needed.
         if: ${{ env.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
-        uses: .github/actions/code-testing/drupal/index-search
+        uses: ./.github/actions/code-testing/drupal/index-search
         with:
           machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
