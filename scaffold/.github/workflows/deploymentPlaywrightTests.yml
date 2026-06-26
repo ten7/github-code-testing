@@ -20,11 +20,15 @@ jobs:
         with:
           pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           terminus-version: 4.3.1
+      - name: Set multidev name
+        id: multidev
+        run: echo "name=${{ github.event.deployment_status.environment }}" | sed 's/pantheon-//' >> $GITHUB_OUTPUT
+
       - name: Wait for review app to respond
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ vars.PANTHEON_SITE_NAME }}
-          multidev-name: ${{ replace(github.event.deployment_status.environment, 'pantheon-', '') }}
+          multidev-name: ${{ steps.multidev.outputs.name }}
 
       # Playwright steps go here
       - name: Checkout actions
