@@ -24,7 +24,7 @@ jobs:
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ vars.PANTHEON_SITE_NAME }}
-          multidev-name: ${{ github.event.deployment_status.environment }}
+          multidev-name: ${{ replace(github.event.deployment_status.environment, 'pantheon-', '') }}
 
       # Playwright steps go here
       - name: Checkout actions
