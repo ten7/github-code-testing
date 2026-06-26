@@ -72,13 +72,10 @@ jobs:
           MULTIDEV_ENV="pr-${PR_NUMBER}"
           echo "Configuring ${SITE_NAME}.${MULTIDEV_ENV} for testing..."
 
-      - name: Ensure ~/.ssh exists
-        run: mkdir -p ~/.ssh
-
-      - name: Make terminus available
-        uses: ./.github/actions/drainpipe/pantheon/setup-terminus
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
         with:
-          terminus-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
 
       - name: Wait for review app to respond
         uses: ./.github/actions/code-testing/terminus/wait-for-build
