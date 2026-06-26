@@ -82,14 +82,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     // Drainpipe workflows rely on actions from lullabot/drainpipe. Copy them
     // automatically so the user doesn't have to do it manually.
     if ($hasDrainpipe) {
-      $drainpipeActions = dirname($this->composer->getConfig()->get('vendor-dir'))
-        . '/vendor/lullabot/drainpipe/scaffold/github/actions/common';
-      if (is_dir($drainpipeActions)) {
-        $this->copyDirectory($drainpipeActions, $targetDir . '/actions/drainpipe');
-        $this->io->write('<info>ten7/code-testing: scaffolded drainpipe actions</info>');
-      }
-      else {
-        $this->io->writeError('<warning>ten7/code-testing: drainpipe workflows configured but lullabot/drainpipe not found in vendor — run composer require lullabot/drainpipe</warning>');
+      $actionsDir = dirname($this->composer->getConfig()->get('vendor-dir')) . '/vendor/lullabot/drainpipe/scaffold/github/actions';
+      $actions = [
+        $actionsDir . '/common',
+        $actionsDir . '/pantheon',
+      ];
+      foreach ($actions as $action) {
+        if (is_dir($action)) {
+          $this->copyDirectory($action, $targetDir . '/actions/drainpipe');
+          $this->io->write('<info>ten7/code-testing: scaffolded drainpipe actions</info>');
+        }
+        else {
+          $this->io->writeError('<warning>ten7/code-testing: drainpipe workflows configured but lullabot/drainpipe not found in vendor — run composer require lullabot/drainpipe</warning>');
+        }
       }
     }
   }
