@@ -84,12 +84,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     if ($hasDrainpipe) {
       $actionsDir = dirname($this->composer->getConfig()->get('vendor-dir')) . '/vendor/lullabot/drainpipe/scaffold/github/actions';
       $actions = [
-        $actionsDir . '/common',
-        $actionsDir . '/pantheon',
+        $actionsDir . '/common' => '/actions/drainpipe',
+        $actionsDir . '/pantheon' => '/actions/drainpipe/pantheon',
       ];
-      foreach ($actions as $action) {
-        if (is_dir($action)) {
-          $this->copyDirectory($action, $targetDir . '/actions/drainpipe');
+      foreach ($actions as $actionSrc => $actionDir) {
+        if (is_dir($actionSrc)) {
+          $this->copyDirectory($actionSrc, $targetDir);
           $this->io->write('<info>ten7/code-testing: scaffolded drainpipe actions</info>');
         }
         else {
