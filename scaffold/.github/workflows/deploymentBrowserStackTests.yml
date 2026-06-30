@@ -4,9 +4,25 @@ on:
   deployment_status: { }
 
 jobs:
+  Decide-If-Tests-Should-Run:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      should-run: ${{ steps.decide.outputs.should-run }}
+      multidev-name: ${{ steps.decide.outputs.multidev-name }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Decide whether to run BrowserStack tests
+        id: decide
+        uses: ./.github/actions/code-testing/github/decide-test-run
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          primary-branch: ${{ vars.BROWSERSTACK_PRIMARY_BRANCH || 'main' }}
   Set-Up-Tests:
     runs-on: ubuntu-latest
-    if: github.event.deployment_status.state == 'success'
+    needs: Decide-If-Tests-Should-Run
+    if: ${{ needs.Decide-If-Tests-Should-Run.outputs.should-run == 'true' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -42,6 +58,15 @@ jobs:
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
           validate-api: 'true'
 
+      - name: Set target URL
+        shell: bash
+        id: set-url
+        env:
+          PANTHEON_SITE_NAME: ${{ vars.PANTHEON_SITE_NAME }}
+          MULTIDEV_NAME: ${{ needs.Decide-If-Tests-Should-Run.outputs.multidev-name }}
+        run: |
+          echo "target_url=https://${MULTIDEV_NAME}-${PANTHEON_SITE_NAME}.pantheonsite.io" >> "$GITHUB_OUTPUT"
+
       - name: Run tests
         if: ${{ steps.validate-browserstack.outputs.available == 'true' }}
         uses: ./.github/actions/code-testing/browserstack/test
@@ -51,3 +76,4 @@ jobs:
           pantheon-review-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
           pantheon-review-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           pantheon-site-name: ${{ vars.PANTHEON_SITE_NAME }}
+          target-url: ''

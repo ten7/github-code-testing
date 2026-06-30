@@ -1,0 +1,115 @@
+name: "Composer Lock Diff"
+
+on:
+  deployment_status: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.deployment_status.environment || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  detect-php-version:
+    name: Detect PHP Version
+    runs-on: ubuntu-latest
+    if: github.event.deployment_status.state == 'success'
+    outputs:
+      php-version: ${{ steps.php-version.outputs.php-version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Read php_version from Pantheon config
+        id: php-version
+        uses: ./.github/actions/code-testing/detect-php-version
+
+  Composer-Lock-Diff:
+    runs-on: ubuntu-24.04
+    needs: detect-php-version
+    if: github.event.deployment_status.state == 'success'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # Step 3: derive the PR number. Pantheon multidev deployments report
+      # environment names like "pantheon-pr-123"; anything else (dev/test/live)
+      # isn't a PR review app, so we skip the rest of the job.
+      - name: Resolve PR number from deployment environment
+        id: pr
+        env:
+          ENVIRONMENT: ${{ github.event.deployment_status.environment }}
+        run: |
+          PR_NUMBER="${ENVIRONMENT##*pr-}"
+
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::notice::Environment '$ENVIRONMENT' is not a PR multidev, skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+
+      # Step 4: deployment_status has no base_ref, so look the PR up by number.
+      - name: Look up base branch for PR
+        id: base
+        if: steps.pr.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BASE_REF=$(gh pr view "${{ steps.pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --json baseRefName --jq '.baseRefName')
+          echo "ref=$BASE_REF" >> "$GITHUB_OUTPUT"
+
+      # Step 5: check out the commit that was actually deployed, not the
+      # default branch HEAD that a bare checkout would give us.
+      - uses: actions/checkout@v6
+        if: steps.pr.outputs.skip != 'true'
+        with:
+          ref: ${{ github.event.deployment.sha }}
+          fetch-depth: 0
+
+      - name: Setup PHP
+        if: steps.pr.outputs.skip != 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ needs.detect-php-version.outputs.php-version }}
+
+      - name: Install composer-lock-diff
+        if: steps.pr.outputs.skip != 'true'
+        run: composer global require davidrjonas/composer-lock-diff:^1.0
+
+      - name: Update PR description with composer diff
+        if: steps.pr.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          git fetch origin ${{ steps.base.outputs.ref }}
+          DIFF=$(~/.composer/vendor/bin/composer-lock-diff \
+            --from origin/${{ steps.base.outputs.ref }}:composer.lock \
+            --to composer.lock \
+            --md)
+
+          [ -z "$DIFF" ] && echo "No composer.lock changes detected." && exit 0
+
+          CURRENT_BODY=$(gh pr view $PR_NUMBER --json body --jq '.body // ""')
+
+          NEW_BODY=$(CURRENT_BODY="$CURRENT_BODY" \
+                     DIFF="$DIFF" \
+                     python3 - <<'PYEOF'
+          import os, re
+
+          body  = os.environ['CURRENT_BODY']
+          diff  = os.environ['DIFF']
+          start = '<!-- composer-lock-diff-start -->'
+          end   = '<!-- composer-lock-diff-end -->'
+
+          body = re.sub(re.escape(start) + '.*?' + re.escape(end), '', body, flags=re.DOTALL).strip()
+
+          new_section = f"{start}\n\n## Composer Lock Diff\n\n{diff}\n\n{end}"
+
+          print((body + '\n\n' + new_section) if body else new_section, end='')
+          PYEOF
+          )
+
+          gh pr edit $PR_NUMBER --body "$NEW_BODY"
