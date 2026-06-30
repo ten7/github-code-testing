@@ -9,8 +9,11 @@ build tooling the actions depend on.
 ## Installation
 
 ```bash
-composer require ten7/code-testing
+composer require "ten7/github-code-testing"
 ```
+
+⚠️If you have lullabot/drainpipe and/or lullabot/drainpipe-dev you will need 
+to uninstall them before installing github-code-testing.
 
 ## Configuration
 
