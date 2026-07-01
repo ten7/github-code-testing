@@ -11,7 +11,7 @@ inputs:
   browserstack-access-key:
     description: "BrowserStack access key. Should be set as a secret named BROWSERSTACK_ACCESS_KEY."
     required: true
-  pantheon-site-name:
+  target-url:
     description: "The name of the Pantheon site to test against."
     required: true
   pantheon-review-username:
@@ -23,20 +23,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set target URL
-      shell: bash
-      id: set-url
-      env:
-        PANTHEON_SITE_NAME: ${{ inputs.pantheon-site-name }}
-        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
-        BASIC_AUTH_PASS: ${{ inputs.pantheon-review-password }}
-      run: |
-        if [[ "${{ github.event.workflow_run.name }}" == "Pantheon Build main" ]]; then
-        echo "target_url=https://dev-${{ PANTHEON_SITE_NAME }}.pantheonsite.io" >> $GITHUB_OUTPUT
-        else
-        echo "target_url=https://pr-${{ github.event.workflow_run.pull_requests[0].number }}-${{ PANTHEON_SITE_NAME }}.pantheonsite.io" >> $GITHUB_OUTPUT
-        fi
-
     - name: Checkout actions
       uses: actions/checkout@v6
 
@@ -57,16 +43,20 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: cd test/playwright && npm ci
+      run: |
+        cd test/playwright
+        npm ci
+        npx playwright install --with-deps chromium chromium-headless-shell
 
     - name: Run BrowserStack tests
       shell: bash
-      run:
-        cd test/playwright && mkdir -p test-results && npm run test:browserstack -- --ignore-snapshots
+      run: |
+        cd test/playwright
+        mkdir -p test-results
+        npm run test:browserstack -- --ignore-snapshots
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
-        BASE_URL: ${{ steps.set-url.outputs.target_url }}
-        PROD_URL: https://test-${{ inputs.pantheon-site-name}}.pantheonsite.io
+        BASE_URL: ${{ inputs.target-url }}
         BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
         BASIC_AUTH_PASS: ${{ inputs.patheon-review-password }}
         BROWSERSTACK_USERNAME: ${{ inputs.browserstack-user-name}}

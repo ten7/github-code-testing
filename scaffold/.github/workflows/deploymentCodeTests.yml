@@ -1,14 +1,9 @@
 name: "Run Unit, Code Quality and Existing-Site Tests"
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches:
-      - edge
-      - main
+  deployment_status: {}
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.deployment_status.environment || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -173,4 +168,4 @@ jobs:
           environment-password: ''
           environment-username: ''
           target-url: ${{ steps.ddev-url.outputs.url }}
-          test-script: 'test:ci-pantheon'
+          test-script: 'ci-ddev'

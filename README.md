@@ -12,43 +12,102 @@ build tooling the actions depend on.
 composer require "ten7/github-code-testing"
 ```
 
-⚠️If you have lullabot/drainpipe and/or lullabot/drainpipe-dev you will need 
+⚠️If you have lullabot/drainpipe and/or lullabot/drainpipe-dev you will need
 to uninstall them before installing github-code-testing.
 
 ## Configuration
 
 Add a `code_testing` key to the `extra` section of your project's
 `composer.json`. Under `github`, declare which workflows to scaffold using a
-context key and a list of workflow names. 
+context key and a list of workflow names.
 
-⚠️ Note that drainpipe is required for any code_testing drainpipe functions.
+#### Required Secrets, Variables and PR Labels
+
+##### Secrets
+
+* SSH_PRIVATE_KEY is needed for all actions.
+* SSH_KNOWN_HOSTS is also needed for all actions.
+* TERMINUS_MACHINE_TOKEN is required for all actions
+* PANTHEON_REVIEW_RUN_INSTALLER is required for drainpipe actions
+* BROWSERSTACK_USERNAME is the short key indicating the username (should be 
+  the company-wide/repo-holder's username at browserstack.com)
+* BROWSERSTACK_ACCESS_KEY is the hash at the same account at browserstack.com
+
+##### Variables
+
+* BROWSERSTACK_PRIMARY_BRANCH is the branch (edge or main) that browserstack
+* tests should be run on.
+* BROWSERSTACK_TESTS_ENABLED is a boolean that indicates if browserstack
+  tests should be run at all.
+* TESTING_NEEDS_SEARCH_INDEXING is a boolean that determines if tests run on 
+  the site require a build to run the search_api index.
+* PANTHEON_SITE_NAME is the human-friendly site name that is used in 
+  multi-dev URLs: https:/dev-[site-name].pantheonsite.io
+
+##### PR Labels
+
+On PRs some labels can be used for triggering actions these include
+
+* skip-wipe which prevents a build from wiping the files and db and starting 
+  from scratch on every push
+* build multidev which is required to actually run drainpipePantheonReviewApps
+* test renovate is useful if you want to reduce testRenovate's time to run 
+  even more. See below.
+
+### Drainpipe Example
+
+This automatically loads all the lullabot/drainpipe actions that are needed
+for the specific tasks. There is no need to call drainpipe separately unless
+you have specific additional requirements for those. Just be sure not to
+overlap functionality.
 
 ```json
 {
-  "extra": {
-    "drainpipe": {
-      "github": {
-        "pantheon": [
-          "Actions"
-        ]
-      }
-    },
-    "code_testing": {
-      "github": {
-        "drainpipe": [
-          "PlaywrightTests",
-          "BrowserStackTests",
-          "PantheonBuildEdge",
-          "PantheonBuildMain",
-          "ReviewApps"
-        ],
-        "github": [
-          "CodeTests"
-        ],
-        "composer": [
-          "LockDiff"
-        ]
-      }
+  "code_testing": {
+    "github": {
+      "drainpipe": [
+        "PlaywrightTests",
+        "BrowserStackTests",
+        "PantheonBuildEdge",
+        "PantheonBuildMain",
+        "PantheonReviewApps",
+        "CodeTests",
+        "LockDiff"
+      ]
+    }
+  }
+}
+```
+
+#### testRenovate
+
+This is required by drainpipe, but may not actually get installed. If you 
+want to use this and you have instructions in a renovate.json and have it 
+configured on Github, you need to add the following to `extra.code_testing`.
+
+```json
+{
+    "test": [
+      "Renovate",
+    ]
+}
+```
+
+### Deployment Example
+
+For sites that use a deployment solution such as pantheon's github builder,
+the options are simpler.
+
+```json
+{
+  "code_testing": {
+    "github": {
+      "deployment": [
+        "PlaywrightTests",
+        "BrowserStackTests",
+        "CodeTests",
+        "LockDiff"
+      ]
     }
   }
 }
@@ -58,12 +117,16 @@ Each entry maps to a workflow file using the pattern `{context}{Name}.yml`. The
 example above would scaffold:
 
 - `drainpipePlaywrightTests.yml`
-- `drainpipeBrowserStackTests.yml`
-- `githubCodeTests.yml`
-- `pantheonReviewApps.yml`
+- `deploymmentBrowserStackTests.yml`
+- `deploymentCodeTests.yml`
+- `testRenovate.yml`
 
-It's entirely possible to skip the extras:code_testing" section and just copy 
-the desired files from ./vendor/ten7/scaffold/.github/workflows
+It's entirely possible to skip the extras:code_testing" section and just copy
+the desired files from ./vendor/ten7/scaffold/.github/workflows, but this
+should not be necessary. If there need to be new changes, they should be
+made here with broadly abstracted steps and making use of updates users can
+make in their repos (secrets/variables/labels) or with specifically required
+scripts test/playwright/package.json
 
 ## Workflow contexts
 
@@ -71,67 +134,19 @@ the desired files from ./vendor/ten7/scaffold/.github/workflows
 |--------------|--------------------------------------------------------------|
 | `drainpipe`  | The project uses drainpipe for its build and deploy pipeline |
 | `deployment` | The project uses a non-drainpipe deployment pipeline         |
-| `pantheon`   | The project is hosted on Pantheon                            |
-| `composer`   | Composer-related workflows (e.g., lock file diffs)           |
 | `test`       | Standalone test utilities (e.g., Renovate)                   |
 
 ## Available workflows
 
-| File                              | Context      | Name                |
-|-----------------------------------|--------------|---------------------|
-| `drainpipePlaywrightTests.yml`    | `drainpipe`  | `PlaywrightTests`   |
-| `drainpipeBrowserStackTests.yml`  | `drainpipe`  | `BrowserStackTests` |
-| `githubCodeTests.yml`             | `github`     | `CodeTests`         |
-| `drainpipePantheonBuildMain.yml`  | `drainpipe`  | `PantheonBuildMain` |
-| `drainpipePantheonBuildEdge.yml`  | `drainpipe`  | `PantheonBuildEdge` |
-| `deploymentPlaywrightTests.yml`   | `deployment` | `PlaywrightTests`   |
-| `deploymentBrowserStackTests.yml` | `deployment` | `BrowserStackTests` |
-| `pantheonReviewApps.yml`          | `pantheon`   | `ReviewApps`        |
-| `composerLockDiff.yml`            | `composer`   | `LockDiff`          |
-| `testRenovate.yml`                | `test`       | `Renovate`          |
+See the directory scaffold/.github/workflows
 
 ## Actions
 
-All actions under `.github/actions/code-testing/` are scaffolded unconditionally. They have
-no effect unless referenced by a workflow.
+All actions under `.github/actions/code-testing/` are scaffolded
+unconditionally. They have no effect unless referenced by a workflow. Each 
+action has a description defining what it does
 
-| Action                                          | Purpose                                             |
-|-------------------------------------------------|-----------------------------------------------------|
-| `actions/code-testing/browserstack/test`        | Run BrowserStack tests                              |
-| `actions/code-testing/browserstack/validate`    | Validate BrowserStack configuration                 |
-| `actions/code-testing/drupal/index-search`      | Trigger search index rebuild via Terminus           |
-| `actions/code-testing/github/add-pr-url`        | Add the multidev URL to a pull request body         |
-| `actions/code-testing/playwright/test`          | Run Playwright tests                                |
-| `actions/code-testing/terminus/wait-for-build`  | Poll until a Pantheon multidev environment is ready |
-
-## Using deployment-based GitHub actions
-
-If your site uses a deployment (such as the Pantheon deployment system), the 
-requirements are different. None of them require drainpipe.
-
-```json
-{
-  "extra": {
-    "code_testing": {
-      "github": {
-        "deployment": [
-          "PlaywrightTests",
-          "BrowserStackTests.yml"
-        ],
-        "github": [
-          "CodeTests"
-        ],
-        "composer": [
-          "LockDiff"
-        ]
-      }
-    }
-  }
-}
-```
-
-Drainpipe scaffolds its own files first; this plugin runs afterward and
-overwrites only the files it manages.
+This plugin also installs certain lullabot/drainpipe actions as needed.
 
 ## Why workflows are opt-in
 
@@ -140,10 +155,12 @@ Workflows not declared in `code_testing` are never written to
 Pantheon-specific or drainpipe-specific workflows out of projects that don't use
 them.
 
-## How to use with Playwright and BrowserStack testing. 
+## How to use with Playwright and BrowserStack testing.
 
-This project expects tests to be in a directory `./test/playwright`. In the 
-package.json file you will need to create scripts that you want to run as follows:
+This project expects tests to be in a directory `./test/playwright`. In the
+package.json file you will need to create scripts that you want to run as
+follows:
+
 * test:ci-ddev
 * test:ci-pantheon
 * test:browserstack
@@ -153,7 +170,8 @@ These tests should define what should be run by npm. An example might be:
 ```json
 {
   "test:ci-ddev": "playwright test --project=func-chromium",
-  "test:ci-pantheon": "playwright test --grep='@smoke' --project=func-chromium"
+  "test:ci-pantheon": "playwright test --grep='@smoke' --project=func-chromium",
+  "test:browserstack": "BROWSERSTACK_BUILD=true browserstack-node-sdk playwright test --grep='@browserstack'"
 }
 
 ```
