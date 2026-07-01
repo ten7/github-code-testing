@@ -75,7 +75,7 @@ jobs:
           multidev-name: edge
 
       - name: Run indexing if it is needed.
-        if: ${{ env.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
+        if: ${{ vars.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
         uses: ./.github/actions/code-testing/drupal/index-search
         with:
           machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}

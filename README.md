@@ -25,34 +25,45 @@ context key and a list of workflow names.
 
 ##### Secrets
 
-* SSH_PRIVATE_KEY is needed for all actions.
-* SSH_KNOWN_HOSTS is also needed for all actions.
-* TERMINUS_MACHINE_TOKEN is required for all actions
-* PANTHEON_REVIEW_RUN_INSTALLER is required for drainpipe actions
-* BROWSERSTACK_USERNAME is the short key indicating the username (should be 
+* `SSH_PRIVATE_KEY` is needed for all actions.
+* `SSH_KNOWN_HOSTS` is also needed for all actions.
+* `TERMINUS_MACHINE_TOKEN` is required for all actions
+* `PANTHEON_REVIEW_RUN_INSTALLER` is required for drainpipe actions
+* `PANTHEON_SITE_NAME` is the required by drainpipe actions. It is the UUID 
+  for the site. It's annoying to have this in both variables and secrets. It 
+  really should just be a variable unless at some point Pantheon allows 
+  renaming a site and the UUID serves it's real purpose of being the 
+  constant identifier. 
+* `BROWSERSTACK_USERNAME` is the short key indicating the username (should be 
   the company-wide/repo-holder's username at browserstack.com)
-* BROWSERSTACK_ACCESS_KEY is the hash at the same account at browserstack.com
+* `BROWSERSTACK_ACCESS_KEY` is the hash at the same account at browserstack.com
 
 ##### Variables
 
-* BROWSERSTACK_PRIMARY_BRANCH is the branch (edge or main) that browserstack
+* `BROWSERSTACK_PRIMARY_BRANCH` is the branch (edge, main, master) that 
+  browserstack
 * tests should be run on.
-* BROWSERSTACK_TESTS_ENABLED is a boolean that indicates if browserstack
+* `BROWSERSTACK_TESTS_ENABLED` is a boolean that indicates if browserstack
   tests should be run at all.
-* TESTING_NEEDS_SEARCH_INDEXING is a boolean that determines if tests run on 
+* `TESTING_NEEDS_SEARCH_INDEXING` is a boolean that determines if tests run on 
   the site require a build to run the search_api index.
-* PANTHEON_SITE_NAME is the human-friendly site name that is used in 
+* `PANTHEON_SITE_NAME` is the human-friendly site name that is used in 
   multi-dev URLs: https:/dev-[site-name].pantheonsite.io
 
 ##### PR Labels
 
 On PRs some labels can be used for triggering actions these include
 
-* skip-wipe which prevents a build from wiping the files and db and starting 
+* `skip-wipe` which prevents a build from wiping the files and db and starting 
   from scratch on every push
-* build multidev which is required to actually run drainpipePantheonReviewApps
-* test renovate is useful if you want to reduce testRenovate's time to run 
+* `build multidev` which is required to actually run drainpipePantheonReviewApps
+* `test renovate` is useful if you want to reduce testRenovate's time to run 
   even more. See below.
+* `browserstack` By default browserstack tests are never run on PRs even if 
+  `BROWSERSTACK_TESTS_ENABLED`=true. Add this label if a PR should also run 
+  browserstack tests. This is useful if a PR includes significant 
+  theme changes. Less "expensive" standard CodeTests or Playwright tests. So 
+  use this with care.
 
 ### Drainpipe Example
 
@@ -113,11 +124,13 @@ the options are simpler.
 }
 ```
 
+### Workflow file patterns
+
 Each entry maps to a workflow file using the pattern `{context}{Name}.yml`. The
 example above would scaffold:
 
 - `drainpipePlaywrightTests.yml`
-- `deploymmentBrowserStackTests.yml`
+- `deploymentBrowserStackTests.yml`
 - `deploymentCodeTests.yml`
 - `testRenovate.yml`
 
