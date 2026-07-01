@@ -72,6 +72,11 @@ for the specific tasks. There is no need to call drainpipe separately unless
 you have specific additional requirements for those. Just be sure not to
 overlap functionality.
 
+⚠️Note that the PlaywrightTests and BrowserstackTests must be merged to the 
+root branch of the repo before they can be run on any PR. This is a 
+fundamental requirement of Github. This is generally acceptable especially 
+for Browserstack since it should be used sparingly. 
+
 ```json
 {
   "code_testing": {
