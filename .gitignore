@@ -1,2 +1,3 @@
 vendor/
 /.github
+/scaffold/.github/actions/drainpipe

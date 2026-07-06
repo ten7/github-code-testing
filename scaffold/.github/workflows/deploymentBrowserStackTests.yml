@@ -18,22 +18,56 @@ jobs:
         uses: ./.github/actions/code-testing/detect-php-version
   Decide-If-Tests-Should-Run:
     runs-on: ubuntu-latest
-    if: ${{ github.event.deployment_status.state == 'success' }}
+    if: github.event.deployment_status.state == 'success'
     outputs:
       should-run: ${{ steps.decide.outputs.should-run }}
-      multidev-name: ${{ steps.decide.outputs.multidev-name }}
+      multidev-name: ${{ steps.multidev.outputs.name }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set multidev name
+        id: multidev
+        run: echo "name=${{ github.event.deployment_status.environment }}" | sed 's/pantheon-//' >> $GITHUB_OUTPUT
 
       - name: Decide whether to run BrowserStack tests
         id: decide
-        uses: ./.github/actions/code-testing/github/decide-test-run
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          primary-branch: ${{ vars.BROWSERSTACK_PRIMARY_BRANCH || 'main' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          MULTIDEV_NAME: ${{ steps.multidev.outputs.name }}
+          BROWSERSTACK_TESTS_ENABLED: ${{ vars.BROWSERSTACK_TESTS_ENABLED }}
+          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          PR_LABEL: browserstack
+        run: |
+          if [[ "$BROWSERSTACK_TESTS_ENABLED" != "true" ]]; then
+            echo "::notice::BrowserStack tests are disabled (BROWSERSTACK_TESTS_ENABLED is not 'true')."
+            echo "should-run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ -z "$BROWSERSTACK_USERNAME" || -z "$BROWSERSTACK_ACCESS_KEY" ]]; then
+            echo "::warning::BrowserStack credentials are not set."
+            echo "should-run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$MULTIDEV_NAME" =~ ^pr-([0-9]+)$ ]]; then
+            PR_NUMBER="${BASH_REMATCH[1]}"
+            LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name')
+            if echo "$LABELS" | grep -qx "$PR_LABEL"; then
+              echo "::notice::PR #$PR_NUMBER has the '$PR_LABEL' label, running BrowserStack tests."
+              echo "should-run=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::PR #$PR_NUMBER is missing the '$PR_LABEL' label, skipping BrowserStack tests."
+              echo "should-run=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "::notice::$MULTIDEV_NAME is not a PR multidev, running BrowserStack tests."
+            echo "should-run=true" >> "$GITHUB_OUTPUT"
+          fi
   Set-Up-Tests:
     runs-on: ubuntu-latest
-    needs: Decide-If-Tests-Should-Run
+    needs: [detect-php-version, Decide-If-Tests-Should-Run]
     if: ${{ needs.Decide-If-Tests-Should-Run.outputs.should-run == 'true' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -48,15 +82,12 @@ jobs:
         with:
           pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           terminus-version: 4.3.1
-      - name: Set multidev name
-        id: multidev
-        run: echo "name=${{ github.event.deployment_status.environment }}" | sed 's/pantheon-//' >> $GITHUB_OUTPUT
 
       - name: Wait for review app to respond
         uses: ./.github/actions/code-testing/terminus/wait-for-build
         with:
           site-name: ${{ vars.PANTHEON_SITE_NAME }}
-          multidev-name: ${{ steps.multidev.outputs.name }}
+          multidev-name: ${{ needs.Decide-If-Tests-Should-Run.outputs.multidev-name }}
 
       # Browserstack test steps go here
       - name: Checkout actions

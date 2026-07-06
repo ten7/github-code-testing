@@ -4,18 +4,6 @@ on:
   deployment_status: {}
 
 jobs:
-  detect-php-version:
-    name: Detect PHP Version
-    runs-on: ubuntu-latest
-    if: github.event.deployment_status.state == 'success'
-    outputs:
-      php-version: ${{ steps.php-version.outputs.php-version }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Read php_version from Pantheon config
-        id: php-version
-        uses: ./.github/actions/code-testing/detect-php-version
   Playwright-Tests:
     runs-on: ubuntu-latest
     if: github.event.deployment_status.state == 'success'
@@ -25,7 +13,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ needs.detect-php-version.outputs.php-version }}
+          php-version: "8.4"
 
       - name: Install Terminus
         uses: pantheon-systems/terminus-github-actions@v1
@@ -44,7 +32,7 @@ jobs:
 
       # Playwright steps go here
       - name: Checkout actions
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Run Playwright tests
         uses: ./.github/actions/code-testing/playwright/test

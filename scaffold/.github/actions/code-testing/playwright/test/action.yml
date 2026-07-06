@@ -28,7 +28,7 @@ runs:
       run: |
         cd test/playwright
         npm ci
-        npx playwright install --with-deps chromium chromium-headless-shell
+        npx playwright install
 
     - name: Run Playwright tests
       shell: bash
