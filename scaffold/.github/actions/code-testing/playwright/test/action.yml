@@ -38,11 +38,14 @@ runs:
       shell: bash
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
-      run: cd test/playwright && mkdir -p test-results && npm run ${{ inputs.test-script }} -- ${{ inputs.test-args }}
+      run: |
+        cd test/playwright
+        mkdir -p test-results 
+        npm run ${{ inputs.test-script }} -- ${{ inputs.test-args }}
     - name: Upload test results
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
       with:
         name: playwright-report
         path: test/playwright/playwright-report/
-        retention-days: 10
+        retention-days: 5

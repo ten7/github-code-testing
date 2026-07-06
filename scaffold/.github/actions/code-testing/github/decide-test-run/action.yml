@@ -1,0 +1,75 @@
+name: 'Decide if Tests Should Run'
+description: 'Decides whether a workflow_run-triggered test job should proceed: gated on the configured primary branch for push builds, or on a PR label for review app builds'
+
+inputs:
+  github-token:
+    description: 'GitHub token used to look up PR labels'
+    required: true
+  primary-branch:
+    description: 'The branch whose build workflow should trigger tests (e.g. main or edge)'
+    required: false
+    default: 'main'
+  build-workflow-prefix:
+    description: 'Prefix of the push-triggered build workflow name, matched against "<prefix><primary-branch>"'
+    required: false
+    default: 'Pantheon Build '
+  review-apps-workflow-name:
+    description: 'Name of the PR-triggered review app workflow'
+    required: false
+    default: 'Pantheon Review Apps'
+  pr-label:
+    description: 'Label required on a PR before tests run against its review app'
+    required: false
+    default: 'browserstack'
+
+outputs:
+  should-run:
+    description: 'Whether the calling job should proceed with testing'
+    value: ${{ steps.decide.outputs.should-run }}
+  multidev-name:
+    description: 'Pantheon multidev name to test against'
+    value: ${{ steps.decide.outputs.multidev-name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Decide whether to run tests
+      id: decide
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        GH_REPO: ${{ github.repository }}
+        WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        PRIMARY_BRANCH: ${{ inputs.primary-branch }}
+        BUILD_WORKFLOW_PREFIX: ${{ inputs.build-workflow-prefix }}
+        REVIEW_APPS_WORKFLOW_NAME: ${{ inputs.review-apps-workflow-name }}
+        PR_LABEL: ${{ inputs.pr-label }}
+        PULL_REQUESTS_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+      run: |
+        if [[ "$WORKFLOW_NAME" == "$REVIEW_APPS_WORKFLOW_NAME" ]]; then
+          PR_NUMBER=$(echo "$PULL_REQUESTS_JSON" | jq -r '.[0].number // empty')
+          if [[ -z "$PR_NUMBER" ]]; then
+            echo "::notice::No pull request associated with this run, skipping."
+            echo "should-run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name')
+          if echo "$LABELS" | grep -qx "$PR_LABEL"; then
+            echo "should-run=true" >> "$GITHUB_OUTPUT"
+            echo "multidev-name=pr-${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::PR #$PR_NUMBER is missing the '$PR_LABEL' label, skipping."
+            echo "should-run=false" >> "$GITHUB_OUTPUT"
+          fi
+        elif [[ "$WORKFLOW_NAME" == "${BUILD_WORKFLOW_PREFIX}${PRIMARY_BRANCH}" ]]; then
+          echo "should-run=true" >> "$GITHUB_OUTPUT"
+          if [[ "$PRIMARY_BRANCH" == "main" ]]; then
+            echo "multidev-name=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "multidev-name=$PRIMARY_BRANCH" >> "$GITHUB_OUTPUT"
+          fi
+        else
+          echo "::notice::$WORKFLOW_NAME is not the configured primary branch ($PRIMARY_BRANCH), skipping."
+          echo "should-run=false" >> "$GITHUB_OUTPUT"
+        fi
