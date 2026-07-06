@@ -13,10 +13,6 @@ inputs:
     description: "The npm script to run (defined in test/playwright/package.json). Defaults to 'test'."
     required: false
     default: "test"
-  test-args:
-    description: "Additional arguments to pass to the Playwright test. For instance --ignore-snapshots --project=func-chromium. Prefer test-script for CI contexts."
-    required: false
-    default: ""
 
 runs:
   using: composite
@@ -38,13 +34,16 @@ runs:
       shell: bash
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
+        BASE_URL: ${{ inputs.target-url }}
+        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
+        BASIC_AUTH_PASS: ${{ inputs.patheon-review-password }}
       run: |
         cd test/playwright
         mkdir -p test-results 
-        npm run ${{ inputs.test-script }} -- ${{ inputs.test-args }}
+        npm run ${{ inputs.test-script }}
     - name: Upload test results
-      if: ${{ !cancelled() }}
-      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v6
       with:
         name: playwright-report
         path: test/playwright/playwright-report/

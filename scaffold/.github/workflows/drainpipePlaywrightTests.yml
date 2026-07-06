@@ -170,7 +170,7 @@ jobs:
       - name: Run Playwright tests in DDEV
         uses: ./.github/actions/code-testing/playwright/test
         with:
-          environment-password: ''
-          environment-username: ''
+          environment-password: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          environment-username: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
           target-url: ${{ steps.ddev-url.outputs.url }}
           test-script: 'test:ci-pantheon'
