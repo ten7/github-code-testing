@@ -4,9 +4,21 @@ on:
   deployment_status: { }
 
 jobs:
+  detect-php-version:
+    name: Detect PHP Version
+    runs-on: ubuntu-latest
+    if: github.event.deployment_status.state == 'success'
+    outputs:
+      php-version: ${{ steps.php-version.outputs.php-version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Read php_version from Pantheon config
+        id: php-version
+        uses: ./.github/actions/code-testing/detect-php-version
   Decide-If-Tests-Should-Run:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.deployment_status.state == 'success' }}
     outputs:
       should-run: ${{ steps.decide.outputs.should-run }}
       multidev-name: ${{ steps.decide.outputs.multidev-name }}
@@ -29,7 +41,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: ${{ needs.detect-php-version.outputs.php-version }}
 
       - name: Install Terminus
         uses: pantheon-systems/terminus-github-actions@v1
@@ -75,5 +87,4 @@ jobs:
           browserstack-username: ${{ secrets.BROWSERSTACK_USERNAME }}
           pantheon-review-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
           pantheon-review-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
-          pantheon-site-name: ${{ vars.PANTHEON_SITE_NAME }}
-          target-url: ''
+          target-url: ${{ steps.set-url.outputs.target_url }}
