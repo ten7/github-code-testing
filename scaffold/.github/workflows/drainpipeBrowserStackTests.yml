@@ -1,4 +1,4 @@
-name: "Run Browserstack tests on Pantheon"
+name: "Run BrowserStack tests on Pantheon"
 
 on:
   workflow_run:

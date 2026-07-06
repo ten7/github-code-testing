@@ -1,4 +1,4 @@
-name: "Run playwright tests on Pantheon"
+name: "Run Playwright tests on Pantheon"
 
 on:
   deployment_status: {}
