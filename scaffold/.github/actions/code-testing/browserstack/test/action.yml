@@ -20,6 +20,10 @@ inputs:
   pantheon-review-password:
     description: "Password for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_PASSWORD."
     required: true
+  browserstack-local:
+    description: "Whether BrowserStack should tunnel through BrowserStack Local. Pantheon review apps are publicly reachable, so this should stay 'false' in CI."
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
@@ -54,3 +58,5 @@ runs:
         BASIC_AUTH_PASS: ${{ inputs.pantheon-review-password }}
         BROWSERSTACK_USERNAME: ${{ inputs.browserstack-username }}
         BROWSERSTACK_ACCESS_KEY: ${{ inputs.browserstack-access-key }}
+        BROWSERSTACK_BUILD_NAME: ${{ inputs.target-url }}
+        BROWSERSTACK_LOCAL: ${{ inputs.browserstack-local }}
