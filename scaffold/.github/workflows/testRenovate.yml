@@ -1,8 +1,9 @@
-name: Test Renovate settings
+name: "Test Renovate Settings"
+run-name: "${{ github.ref_name }} by @${{ github.actor }}"
+
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

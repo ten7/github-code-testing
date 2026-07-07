@@ -1,4 +1,6 @@
 name: "Run Unit, Code Quality and Existing-Site Tests"
+run-name: "${{ github.event.deployment_status.environment }} by @${{ github.actor }}"
+
 
 on:
   deployment_status: {}

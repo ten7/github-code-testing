@@ -1,4 +1,5 @@
-name: "Pantheon Build main"
+name: "Pantheon Build Main"
+run-name: "${{ github.ref_name }} by @${{ github.actor }}"
 
 on:
   push:

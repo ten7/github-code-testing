@@ -1,10 +1,11 @@
-name: "Playwright Tests"
+name: "Run Playwright tests on Pantheon"
+run-name: "${{ github.event.workflow_run.head_branch }} by @${{ github.event.workflow_run.actor.login }}"
 
 on:
   workflow_run:
     workflows:
-      - "Pantheon Build edge"
-      - "Pantheon Build main"
+      - "Pantheon Build Edge"
+      - "Pantheon Build Main"
       - "Pantheon Review Apps"
     types:
       - completed
@@ -47,7 +48,7 @@ jobs:
       - name: Run Playwright tests in Pantheon environment.
         uses: ./.github/actions/code-testing/playwright/test
         with:
-          environment-password: ''
-          environment-username: ''
-          target-url: ${{ steps.ddev-url.outputs.url }}
+          environment-password: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          environment-username: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          target-url: ${{ steps.set-url.outputs.target_url }}
           test-script: 'test:ci-pantheon'

@@ -1,4 +1,5 @@
 name: "Pantheon Review Apps"
+run-name: "PR #${{ github.event.pull_request.number }} (${{ github.head_ref }}) by @${{ github.actor }}"
 
 on:
   pull_request:

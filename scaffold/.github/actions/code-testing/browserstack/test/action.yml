@@ -26,14 +26,6 @@ runs:
     - name: Checkout actions
       uses: actions/checkout@v6
 
-    - name: Verify site name is set
-      shell: bash
-      run: |
-        if [ -z "$PANTHEON_SITE_NAME" ]; then
-          echo "::error::PANTHEON_SITE_NAME is empty. Set it under Settings → Secrets and variables → Actions (either tab)."
-          exit 1
-        fi
-        echo "Using PANTHEON_SITE_NAME=$PANTHEON_SITE_NAME"
     - name: Setup Node.js
       uses: actions/setup-node@v6
       with:
@@ -51,6 +43,7 @@ runs:
     - name: Run BrowserStack tests
       shell: bash
       run: |
+        echo "running tests on ${BASE_URL}"
         cd test/playwright
         mkdir -p test-results
         npm run test:browserstack
@@ -58,6 +51,6 @@ runs:
         NODE_OPTIONS: --disable-warning=DEP0205
         BASE_URL: ${{ inputs.target-url }}
         BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
-        BASIC_AUTH_PASS: ${{ inputs.patheon-review-password }}
-        BROWSERSTACK_USERNAME: ${{ inputs.browserstack-user-name}}
+        BASIC_AUTH_PASS: ${{ inputs.pantheon-review-password }}
+        BROWSERSTACK_USERNAME: ${{ inputs.browserstack-username }}
         BROWSERSTACK_ACCESS_KEY: ${{ inputs.browserstack-access-key }}
