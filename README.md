@@ -27,6 +27,20 @@ useful check on every run.
 
 ## Installation
 
+This repo is not listed at packagist so you need to add the following to 
+your "repositories[]" in composer.json:
+
+```json
+{
+    "type": "vcs",
+    "url": "https://github.com/ten7/github-code-testing"
+}
+```
+
+Then you can run the following, though nothing will change in your codebase 
+until you define "github" in "extras" explained below. 
+
+
 ```bash
 composer require "ten7/github-code-testing"
 ```
