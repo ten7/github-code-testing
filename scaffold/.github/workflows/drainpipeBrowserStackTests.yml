@@ -1,4 +1,4 @@
-name: "Run BrowserStack tests on Pantheon"
+name: "Run BrowserStack Tests on Pantheon"
 run-name: "${{ github.event.workflow_run.head_branch }} by @${{ github.event.workflow_run.actor.login }}"
 
 on:

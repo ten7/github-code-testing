@@ -1,4 +1,4 @@
-name: "Run Playwright tests on Pantheon"
+name: "Run Playwright Tests on Pantheon"
 run-name: "${{ github.event.deployment_status.environment }} by @${{ github.actor }}"
 
 on:
