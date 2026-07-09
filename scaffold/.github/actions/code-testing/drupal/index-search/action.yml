@@ -22,6 +22,7 @@ runs:
         MACHINE_TOKEN: ${{ inputs.machine-token }}
       shell: bash
       run: |
+        source .github/actions/drainpipe/set-env/bash_aliases
         terminus auth:login --machine-token="${{ env.MACHINE_TOKEN }}"
-        terminus remote:drush ${{ env.PANTHEON_SITE_NAME }}.${{ env.MULTIDEV_NAME }} -- search-api:reset-tracker
-        terminus remote:drush ${{ env.PANTHEON_SITE_NAME }}.${{ env.MULTIDEV_NAME }} -- search-api:index
+        drainpipe_exec "terminus remote:drush ${{ env.PANTHEON_SITE_NAME }}.${{ env.MULTIDEV_NAME }} -- search-api:reset-tracker"
+        drainpipe_exec "terminus remote:drush ${{ env.PANTHEON_SITE_NAME }}.${{ env.MULTIDEV_NAME }} -- search-api:index"
