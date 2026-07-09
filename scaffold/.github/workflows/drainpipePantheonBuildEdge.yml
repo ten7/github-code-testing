@@ -63,22 +63,3 @@ jobs:
           commit-message: ${{ github.sha }}
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           branch: edge
-
-      - name: Install Terminus
-        uses: pantheon-systems/terminus-github-actions@v1
-        with:
-          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
-
-      - name: Wait for review app to respond
-        uses: ./.github/actions/code-testing/terminus/wait-for-build
-        with:
-          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          multidev-name: edge
-
-      - name: Run indexing if it is needed.
-        if: ${{ vars.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
-        uses: ./.github/actions/code-testing/drupal/index-search
-        with:
-          machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
-          pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          multidev-name: edge

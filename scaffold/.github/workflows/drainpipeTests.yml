@@ -1,4 +1,4 @@
-name: "Run BrowserStack Tests on Pantheon"
+name: "Run Tests on Pantheon"
 run-name: "${{ github.event.workflow_run.head_branch }} by @${{ github.event.workflow_run.actor.login }}"
 
 on:
@@ -9,6 +9,9 @@ on:
       - "Pantheon Review Apps"
     types:
       - completed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -27,6 +30,7 @@ jobs:
       - name: Read php_version from Pantheon config
         id: php-version
         uses: ./.github/actions/code-testing/detect-php-version
+
   Decide-If-Tests-Should-Run:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -36,17 +40,69 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Decide whether to run BrowserStack tests
+      - name: Decide whether to run tests
         id: decide
         uses: ./.github/actions/code-testing/github/decide-test-run
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           primary-branch: ${{ vars.BROWSERSTACK_PRIMARY_BRANCH || 'main' }}
 
-  Set-Up-Tests:
-    needs: Decide-If-Tests-Should-Run
-    if: ${{ needs.Decide-If-Tests-Should-Run.outputs.should-run == 'true' }}
+  Index-Search-Api:
+    name: Index Search API (if needed)
     runs-on: ubuntu-latest
+    needs: [Decide-If-Tests-Should-Run]
+    if: ${{ needs.Decide-If-Tests-Should-Run.outputs.should-run == 'true' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@v1
+        with:
+          pantheon-machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          terminus-version: 4.3.1
+
+      - name: Wait for review app to respond
+        uses: ./.github/actions/code-testing/terminus/wait-for-build
+        with:
+          site-name: ${{ vars.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ needs.Decide-If-Tests-Should-Run.outputs.multidev-name }}
+
+      - name: Run indexing if it is needed.
+        if: ${{ vars.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
+        uses: ./.github/actions/code-testing/drupal/index-search
+        with:
+          machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
+          pantheon-site-name: ${{ vars.PANTHEON_SITE_NAME }}
+          multidev-name: ${{ needs.Decide-If-Tests-Should-Run.outputs.multidev-name }}
+
+  Playwright-Tests:
+    runs-on: ubuntu-latest
+    needs: [Decide-If-Tests-Should-Run, Index-Search-Api]
+    if: ${{ needs.Decide-If-Tests-Should-Run.outputs.should-run == 'true' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set target URL
+        shell: bash
+        id: set-url
+        env:
+          PANTHEON_SITE_NAME: ${{ vars.PANTHEON_SITE_NAME }}
+          MULTIDEV_NAME: ${{ needs.Decide-If-Tests-Should-Run.outputs.multidev-name }}
+        run: |
+          echo "target_url=https://${MULTIDEV_NAME}-${PANTHEON_SITE_NAME}.pantheonsite.io" >> "$GITHUB_OUTPUT"
+
+      - name: Run Playwright tests in Pantheon environment.
+        uses: ./.github/actions/code-testing/playwright/test
+        with:
+          environment-password: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          environment-username: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          target-url: ${{ steps.set-url.outputs.target_url }}
+          test-script: 'test:ci-pantheon'
+
+  BrowserStack-Tests:
+    runs-on: ubuntu-latest
+    needs: [detect-php-version, Decide-If-Tests-Should-Run, Index-Search-Api]
+    if: ${{ needs.Decide-If-Tests-Should-Run.outputs.should-run == 'true' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 

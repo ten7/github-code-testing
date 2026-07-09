@@ -84,14 +84,6 @@ jobs:
           multidev-name: pr-${{ github.event.pull_request.number }}
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
 
-      - name: Run indexing if it is needed.
-        if: ${{ vars.TESTING_NEEDS_SEARCH_INDEXING == 'true' }}
-        uses: ./.github/actions/code-testing/drupal/index-search
-        with:
-          machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
-          pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          multidev-name: pr-${{ github.event.pull_request.number }}
-
       - name: Add Multidev URL to PR
         uses: ./.github/actions/code-testing/github/add-pr-url
         with:

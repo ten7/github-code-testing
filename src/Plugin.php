@@ -52,7 +52,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
 
     // Copy only the workflows declared in extra.code_testing.github.
     // Each context key becomes a filename prefix:
-    //   "drainpipe": ["PlaywrightTests"] → drainpipePlaywrightTests.yml
+    //   "drainpipe": ["PlaywrightTests"] → drainpipeTests.yml
     //   "deployment": ["PlaywrightTests"] → deploymentPlaywrightTests.yml
     //   "pantheon":   ["ReviewApps"]      → pantheonReviewApps.yml
     $hasDrainpipe = FALSE;
