@@ -4,8 +4,8 @@ inputs:
   pantheon-site-name:
     description: 'The site name, such as bps-district'
     required: true
-  pr-number:
-    description: "The Pull Request number"
+  multidev-name:
+    description: "The name of the environment: dev, edge, pr-[x]"
     required: true
   machine-token:
     description: "The machine token needed to authorize terminus"
@@ -18,10 +18,10 @@ runs:
       id: search-indexing
       env:
         PANTHEON_SITE_NAME: ${{ inputs.pantheon-site-name }}
-        PR_NUMBER: ${{ inputs.pr-number }}
+        MULTIDEV_NAME: ${{ inputs.multidev-name }}
         MACHINE_TOKEN: ${{ inputs.machine-token }}
       shell: bash
       run: |
-        drainpipe_exec "terminus auth:login --machine-token="${{env.MACHINE_TOKEN}}" && \
-        terminus remote:drush ${{env.PANTHEON_SITE_NAME}}.pr-${{ env.PR_NUMBER }} -- search-api:reset-tracker && \
-        terminus remote:drush ${{env.PANTHEON_SITE_NAME}}.pr-${{ github.event.pull_request.number }} -- search-api:index"
+        terminus auth:login --machine-token="${{ env.MACHINE_TOKEN }}"
+        terminus remote:drush ${{ env.PANTHEON_SITE_NAME }}.${{ env.MULTIDEV_NAME }} -- search-api:reset-tracker
+        terminus remote:drush ${{ env.PANTHEON_SITE_NAME }}.${{ env.MULTIDEV_NAME }} -- search-api:index

@@ -81,4 +81,4 @@ jobs:
         with:
           machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          pr-number: edge
+          multidev-name: edge

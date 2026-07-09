@@ -90,7 +90,7 @@ jobs:
         with:
           machine-token: ${{ secrets.TERMINUS_MACHINE_TOKEN }}
           pantheon-site-name: ${{ secrets.PANTHEON_SITE_NAME }}
-          pr-number: pr-${{ github.event.pull_request.number }}
+          multidev-name: pr-${{ github.event.pull_request.number }}
 
       - name: Add Multidev URL to PR
         uses: ./.github/actions/code-testing/github/add-pr-url
