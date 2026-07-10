@@ -9,10 +9,10 @@ inputs:
   environment-password:
     description: "Password for basic auth to access any site that is behind a server-level username/password. If it is not needed it will be ignored."
     required: true
-  test-script:
-    description: "The npm script to run (defined in test/playwright/package.json). Defaults to 'test'."
+  test-args:
+    description: "Additional arguments to pass to the Playwright test. For instance --ignore-snapshots --project=func-chromium"
     required: false
-    default: "test"
+    default: "--ignore-snapshots --project=func-chromium --project=wcag --project=vrt-chromium"
 
 runs:
   using: composite
@@ -28,23 +28,31 @@ runs:
       run: |
         cd test/playwright
         npm ci
-        npx playwright install
 
+    - name: Install Playwright browsers
+      shell: bash
+      run: |
+        cd test/playwright 
+        npx playwright install
     - name: Run Playwright tests
       shell: bash
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
         BASE_URL: ${{ inputs.target-url }}
-        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
-        BASIC_AUTH_PASS: ${{ inputs.patheon-review-password }}
-      run: |
-        cd test/playwright
-        mkdir -p test-results 
-        npm run ${{ inputs.test-script }}
+        BASIC_AUTH_USER: ${{ inputs.environment-username }}
+        BASIC_AUTH_PASS: ${{ inputs.environment-password }}
+      run: cd test/playwright && mkdir -p test-results && npm run test -- ${{ inputs.test-args }}
     - name: Upload test results
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report
         path: test/playwright/playwright-report/
-        retention-days: 5
+        retention-days: 30
+    - name: Upload test artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: test/playwright/test-results/
+        retention-days: 30

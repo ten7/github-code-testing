@@ -38,7 +38,6 @@ runs:
       run: |
         cd test/playwright
         npm ci
-        npx playwright install --with-deps chromium chromium-headless-shell
 
     - name: Run BrowserStack tests
       shell: bash
