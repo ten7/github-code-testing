@@ -1,8 +1,13 @@
-# ten7/github-code-testing
+# GitHub Code Testing
 
 A Composer plugin that scaffolds TEN7's GitHub Actions and workflow files into
 Drupal projects.
-Requires [lullabot/drainpipe](https://github.com/lullabot/drainpipe) as a 
+
+This is a transitional project, allowing TEN7 to build testing infrastructure for
+existing lullabot/drainpipe projects and preparing for the switch to Pantheon-based 
+deployments on GitHub. 
+
+This will install [lullabot/drainpipe](https://github.com/lullabot/drainpipe) as a 
 dependency, but drainpipe actions are only installed on sites that use 
 drainpipe.
 
@@ -40,9 +45,12 @@ your "repositories[]" in composer.json:
 Then you can run the following, though nothing will change in your codebase 
 until you define "github" in "extras" explained below. 
 
+Note: It is best to use the latest version when requiring this. Check the tags
+at https://github.com/ten7/github-code-testing.
+
 
 ```bash
-composer require "ten7/github-code-testing"
+composer require "ten7/github-code-testing^1.0.7-beta"
 ```
 
 ⚠️If you have lullabot/drainpipe and/or lullabot/drainpipe-dev you will need
