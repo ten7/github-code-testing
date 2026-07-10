@@ -67,7 +67,7 @@ jobs:
 
       - name: Configure review app for testing
         env:
-          SITE_NAME: ${{ vars.PANTHEON_SITE_NAME || secrets.PANTHEON_SITE_NAME }}
+          SITE_NAME: ${{ vars.PANTHEON_SITE_NAME }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           MULTIDEV_ENV="pr-${PR_NUMBER}"
@@ -97,6 +97,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pr-number: ${{ github.event.pull_request.number }}
-          site-name: ${{ vars.PANTHEON_SITE_NAME || secrets.PANTHEON_SITE_NAME }}
+          site-name: ${{ vars.PANTHEON_SITE_NAME }}
           lock-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           lock-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
