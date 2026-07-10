@@ -23,6 +23,8 @@ jobs:
       multidev-name: ${{ steps.decide.outputs.multidev-name }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Decide whether to run BrowserStack tests
         id: decide
@@ -37,11 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ needs.detect-php-version.outputs.php-version }}
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Install Terminus
         uses: pantheon-systems/terminus-github-actions@v1

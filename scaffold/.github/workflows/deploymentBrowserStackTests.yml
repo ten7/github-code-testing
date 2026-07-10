@@ -92,6 +92,8 @@ jobs:
       # Browserstack test steps go here
       - name: Checkout actions
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Validate browserstack connection
         id: validate-browserstack
