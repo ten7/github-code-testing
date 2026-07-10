@@ -170,4 +170,4 @@ jobs:
           environment-password: ''
           environment-username: ''
           target-url: ${{ steps.ddev-url.outputs.url }}
-          test-script: 'ci-ddev'
+          test-script: 'test:ci-ddev'
