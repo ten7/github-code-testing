@@ -36,6 +36,10 @@ runs:
         cd test/playwright
         npm ci
 
+    - name: Ensure BrowserStack config directory exists
+      shell: bash
+      run: mkdir -p "$HOME/.browserstack"
+
     - name: Run BrowserStack tests
       shell: bash
       run: |
