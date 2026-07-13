@@ -56,7 +56,7 @@ jobs:
       - name: Run Playwright tests in Pantheon environment.
         uses: ./.github/actions/code-testing/playwright/test
         with:
-          environment-password: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
-          environment-username: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          environment-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           target-url: ${{ steps.set-url.outputs.target_url }}
           test-script: 'test:ci-pantheon'
