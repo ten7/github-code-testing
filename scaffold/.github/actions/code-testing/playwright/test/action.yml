@@ -3,11 +3,11 @@ description: "Run Playwright tests against a remote environment."
 inputs:
   target-url:
     description: "The url to be used as BASE_URL for the scripts"
-  environment-username:
-    description: "Username for basic auth to access any site that is behind a server-level username/password. If it is not needed it will be ignored."
+  basic-auth-user:
+    description: "Username for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_USERNAME."
     required: true
-  environment-password:
-    description: "Password for basic auth to access any site that is behind a server-level username/password. If it is not needed it will be ignored."
+  basic-auth-pass:
+    description: "Password for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_PASSWORD."
     required: true
   test-script:
     description: "The npm script to run (defined in test/playwright/package.json). Defaults to 'test'."
@@ -28,15 +28,42 @@ runs:
       run: |
         cd test/playwright
         npm ci
-        npx playwright install
+
+    - name: Get installed Playwright version
+      id: playwright-version
+      shell: bash
+      run: |
+        cd test/playwright
+        echo "version=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> $GITHUB_OUTPUT
+
+    - name: Cache Playwright browser binaries
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+    - name: Install Playwright browsers and OS dependencies
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        cd test/playwright
+        npx playwright install --with-deps
+
+    - name: Install OS dependencies for cached browsers
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        cd test/playwright
+        npx playwright install-deps
 
     - name: Run Playwright tests
       shell: bash
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
         BASE_URL: ${{ inputs.target-url }}
-        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
-        BASIC_AUTH_PASS: ${{ inputs.patheon-review-password }}
+        BASIC_AUTH_USER: ${{ inputs.basic-auth-user }}
+        BASIC_AUTH_PASS: ${{ inputs.basic-auth-pass }}
       run: |
         cd test/playwright
         mkdir -p test-results 

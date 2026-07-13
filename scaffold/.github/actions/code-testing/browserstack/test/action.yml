@@ -14,10 +14,10 @@ inputs:
   target-url:
     description: "The name of the Pantheon site to test against."
     required: true
-  pantheon-review-username:
+  basic-auth-user:
     description: "Username for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_USERNAME."
     required: true
-  pantheon-review-password:
+  basic-auth-pass:
     description: "Password for basic auth to access Pantheon review apps. Should be set as a secret named PANTHEON_REVIEW_PASSWORD."
     required: true
 runs:
@@ -50,8 +50,8 @@ runs:
       env:
         NODE_OPTIONS: --disable-warning=DEP0205
         BASE_URL: ${{ inputs.target-url }}
-        BASIC_AUTH_USER: ${{ inputs.pantheon-review-username }}
-        BASIC_AUTH_PASS: ${{ inputs.pantheon-review-password }}
+        BASIC_AUTH_USER: ${{ inputs.basic-auth-user }}
+        BASIC_AUTH_PASS: ${{ inputs.basic-auth-pass }}
         BROWSERSTACK_USERNAME: ${{ inputs.browserstack-username }}
         BROWSERSTACK_ACCESS_KEY: ${{ inputs.browserstack-access-key }}
         BROWSERSTACK_BUILD_NAME: ${{ inputs.target-url }}

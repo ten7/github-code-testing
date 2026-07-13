@@ -41,6 +41,6 @@ jobs:
         uses: ./.github/actions/code-testing/playwright/test
         with:
           target-url: ${{ github.event.deployment_status.environment_url }}
-          environment-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
-          environment-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          basic-auth-user: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          basic-auth-pass: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
           test-script: 'test:ci-pantheon'

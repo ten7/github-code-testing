@@ -171,7 +171,7 @@ jobs:
       - name: Run Playwright tests in DDEV
         uses: ./.github/actions/code-testing/playwright/test
         with:
-          environment-password: ''
-          environment-username: ''
+          basic-auth-pass: ''
+          basic-auth-user: ''
           target-url: ${{ steps.ddev-url.outputs.url }}
           test-script: 'test:ci-ddev'

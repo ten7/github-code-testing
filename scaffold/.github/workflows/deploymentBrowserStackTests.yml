@@ -119,6 +119,6 @@ jobs:
         with:
           browserstack-access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
           browserstack-username: ${{ secrets.BROWSERSTACK_USERNAME }}
-          pantheon-review-password: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
-          pantheon-review-username: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
+          basic-auth-pass: ${{ secrets.PANTHEON_REVIEW_PASSWORD }}
+          basic-auth-user: ${{ secrets.PANTHEON_REVIEW_USERNAME }}
           target-url: ${{ steps.set-url.outputs.target_url }}
