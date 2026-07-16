@@ -10,6 +10,7 @@ concurrency:
 
 jobs:
   detect-php-version:
+    if: github.event.deployment_status.state == 'success'
     name: Detect PHP Version
     runs-on: ubuntu-latest
     outputs:
@@ -155,16 +156,38 @@ jobs:
           path: |
             test-results/phpunit/
             web/sites/simpletest/browser_output/
+      - name: Check if Playwright should run
+        id: check-playwright
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Run Playwright on the default branch, or when the PR
+          # associated with this deployment has the playwright-tests label.
+          if [ "${{ github.event.deployment.ref }}" = "${{ github.event.repository.default_branch }}" ]; then
+            echo "Deployment is for the default branch."
+            echo "run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          LABELS=$(gh api "repos/${{ github.repository }}/commits/${{ github.event.deployment.sha }}/pulls" \
+            --jq '[.[].labels[].name] | join(" ")')
+          echo "PR labels: ${LABELS}"
+          if echo "${LABELS}" | grep -qw 'playwright-tests'; then
+            echo "run=true" >> $GITHUB_OUTPUT
+          else
+            echo "run=false" >> $GITHUB_OUTPUT
+          fi
 
       # --- Playwright E2E Tests against DDEV environment ---
       - name: Get DDEV URL
         id: ddev-url
+        if: steps.check-playwright.outputs.run == 'true'
         run: |
           DDEV_URL=$(ddev describe -j | jq -r '.raw.primary_url')
           echo "url=${DDEV_URL}" >> $GITHUB_OUTPUT
           echo "DDEV URL: ${DDEV_URL}"
 
       - name: Run Playwright tests in DDEV
+        if: steps.check-playwright.outputs.run == 'true'
         uses: ./.github/actions/code-testing/playwright/test
         with:
           basic-auth-pass: ''

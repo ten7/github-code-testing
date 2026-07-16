@@ -161,14 +161,22 @@ jobs:
             web/sites/simpletest/browser_output/
 
       # --- Playwright E2E Tests against DDEV environment ---
+      # Run Playwright on pushes to the default branch, or when the PR
+      # has the playwright-tests label.
+      - name: Check if Playwright should run
+        id: check-playwright
+        run: echo "run=${{ (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || contains(github.event.pull_request.labels.*.name, 'playwright-tests') }}" >> $GITHUB_OUTPUT
+
       - name: Get DDEV URL
         id: ddev-url
+        if: steps.check-playwright.outputs.run == 'true'
         run: |
           DDEV_URL=$(ddev describe -j | jq -r '.raw.primary_url')
           echo "url=${DDEV_URL}" >> $GITHUB_OUTPUT
           echo "DDEV URL: ${DDEV_URL}"
 
       - name: Run Playwright tests in DDEV
+        if: steps.check-playwright.outputs.run == 'true'
         uses: ./.github/actions/code-testing/playwright/test
         with:
           basic-auth-pass: ''
