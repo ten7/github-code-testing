@@ -59,6 +59,12 @@ jobs:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           branch: master
 
+      - name: Import configuration and run updates
+        uses: ./.github/actions/drainpipe/pantheon/update
+        with:
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          environment: dev
+
       - name: Install Terminus
         uses: pantheon-systems/terminus-github-actions@v1
         with:

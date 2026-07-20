@@ -64,6 +64,12 @@ jobs:
           site-name: ${{ secrets.PANTHEON_SITE_NAME }}
           branch: edge
 
+      - name: Import configuration and run updates
+        uses: ./.github/actions/drainpipe/pantheon/update
+        with:
+          site-name: ${{ secrets.PANTHEON_SITE_NAME }}
+          environment: edge
+
       - name: Install Terminus
         uses: pantheon-systems/terminus-github-actions@v1
         with:
